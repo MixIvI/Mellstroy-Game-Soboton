@@ -138,7 +138,7 @@ const achievements = {
     luckyStreak: {
         id: 'luckyStreak',
         name: 'Счастливая серия',
-        description: 'Пройдите 3 уровня подрыв без единой ошибки',
+        description: 'Пройдите 3 уровня подряд без единой ошибки',
         icon: '🍀',
         reward: 35,
         condition: (stats) => stats.luckyStreak >= 3,
@@ -179,7 +179,7 @@ const achievements = {
         reward: 100,
         condition: (stats) => {
             const unlocked = Object.values(achievements).filter(a => a.unlocked).length;
-            return unlocked >= Object.keys(achievements).length - 1; // -1 потому что это достижение само себя не считает
+            return unlocked >= Object.keys(achievements).length - 1;
         },
         unlocked: false
     }
@@ -188,28 +188,36 @@ const achievements = {
 class AchievementSystem {
     constructor(game) {
         this.game = game;
-        this.achievements = achievements;
+        this.achievements = JSON.parse(JSON.stringify(achievements)); // Deep copy
         this.loadAchievements();
     }
 
     loadAchievements() {
-        const saved = localStorage.getItem('mellstroy_achievements');
-        if (saved) {
-            const data = JSON.parse(saved);
-            Object.keys(data).forEach(achievementId => {
-                if (this.achievements[achievementId]) {
-                    this.achievements[achievementId].unlocked = data[achievementId];
-                }
-            });
+        try {
+            const saved = localStorage.getItem('mellstroy_achievements');
+            if (saved) {
+                const data = JSON.parse(saved);
+                Object.keys(data).forEach(achievementId => {
+                    if (this.achievements[achievementId]) {
+                        this.achievements[achievementId].unlocked = data[achievementId];
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error loading achievements:', error);
         }
     }
 
     saveAchievements() {
-        const data = {};
-        Object.keys(this.achievements).forEach(achievementId => {
-            data[achievementId] = this.achievements[achievementId].unlocked;
-        });
-        localStorage.setItem('mellstroy_achievements', JSON.stringify(data));
+        try {
+            const data = {};
+            Object.keys(this.achievements).forEach(achievementId => {
+                data[achievementId] = this.achievements[achievementId].unlocked;
+            });
+            localStorage.setItem('mellstroy_achievements', JSON.stringify(data));
+        } catch (error) {
+            console.error('Error saving achievements:', error);
+        }
     }
 
     checkAchievements(stats) {
@@ -219,7 +227,9 @@ class AchievementSystem {
             if (!achievement.unlocked && achievement.condition(stats)) {
                 achievement.unlocked = true;
                 newlyUnlocked.push(achievement);
-                this.game.addStars(achievement.reward);
+                if (this.game && this.game.addStars) {
+                    this.game.addStars(achievement.reward);
+                }
                 this.saveAchievements();
             }
         });
@@ -236,41 +246,64 @@ class AchievementSystem {
     }
 
     renderAchievementsList() {
-        const container = document.getElementById('achievements-list');
-        if (!container) return;
+        try {
+            const container = document.getElementById('achievements-list');
+            if (!container) return;
 
-        container.innerHTML = '';
+            container.innerHTML = '';
 
-        Object.values(this.achievements).forEach(achievement => {
-            const achievementElement = document.createElement('div');
-            achievementElement.className = `achievement-item ${achievement.unlocked ? 'unlocked' : 'locked'}`;
-            
-            const progress = this.calculateAchievementProgress(achievement, this.game.stats);
-            
-            achievementElement.innerHTML = `
-                <div class="achievement-icon">${achievement.icon}</div>
-                <div class="achievement-info">
-                    <div class="achievement-name">${achievement.name}</div>
-                    <div class="achievement-desc">${achievement.description}</div>
-                    ${!achievement.unlocked ? `
-                        <div class="achievement-progress">
-                            <div class="achievement-progress-bar" style="width: ${progress}%"></div>
-                        </div>
-                    ` : ''}
-                </div>
-                <div class="achievement-reward">+💎${achievement.reward}</div>
-            `;
+            Object.values(this.achievements).forEach(achievement => {
+                const achievementElement = document.createElement('div');
+                achievementElement.className = `achievement-item ${achievement.unlocked ? 'unlocked' : 'locked'}`;
+                
+                const progress = this.calculateAchievementProgress(achievement, this.game?.stats || {});
+                
+                achievementElement.innerHTML = `
+                    <div class="achievement-icon">${achievement.icon}</div>
+                    <div class="achievement-info">
+                        <div class="achievement-name">${achievement.name}</div>
+                        <div class="achievement-desc">${achievement.description}</div>
+                        ${!achievement.unlocked ? `
+                            <div class="achievement-progress">
+                                <div class="achievement-progress-bar" style="width: ${progress}%"></div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="achievement-reward">+💎${achievement.reward}</div>
+                `;
 
-            container.appendChild(achievementElement);
-        });
+                container.appendChild(achievementElement);
+            });
+        } catch (error) {
+            console.error('Error rendering achievements list:', error);
+        }
     }
 
     calculateAchievementProgress(achievement, stats) {
-        // Это упрощенная версия - в реальной игре нужно точное отслеживание прогресса
         if (achievement.unlocked) return 100;
         
-        // Для демонстрации возвращаем случайный прогресс
-        // В реальной игре нужно вычислять точный прогресс для каждого достижения
-        return Math.min(Math.random() * 100, 100);
+        // Базовая логика прогресса - можно улучшить
+        switch(achievement.id) {
+            case 'firstSteps':
+                return stats.levelsCompleted >= 1 ? 100 : 0;
+            case 'level10':
+                return Math.min((stats.levelsCompleted / 10) * 100, 100);
+            case 'level25':
+                return Math.min((stats.levelsCompleted / 25) * 100, 100);
+            case 'level50':
+                return Math.min((stats.levelsCompleted / 50) * 100, 100);
+            case 'level100':
+                return Math.min((stats.levelsCompleted / 100) * 100, 100);
+            case 'moneyMover':
+                return Math.min((stats.totalMoves / 1000) * 100, 100);
+            case 'starCollector':
+                return Math.min((stats.totalStarsEarned / 500) * 100, 100);
+            case 'persistence':
+                return Math.min((stats.energySpent / 50) * 100, 100);
+            case 'strategist':
+                return Math.min((stats.undoUsed / 50) * 100, 100);
+            default:
+                return 0;
+        }
     }
 }
