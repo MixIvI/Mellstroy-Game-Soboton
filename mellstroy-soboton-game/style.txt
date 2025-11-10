@@ -1,0 +1,697 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --casino-gold: #FFD700;
+    --casino-red: #DC143C;
+    --casino-green: #228B22;
+    --casino-purple: #8A2BE2;
+    --casino-dark: #0A0A0A;
+    --casino-light: #F8F8FF;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, var(--casino-dark) 0%, #1a1a2e 50%, #16213e 100%);
+    color: var(--casino-light);
+    min-height: 100vh;
+    background-image: 
+        radial-gradient(circle at 20% 80%, rgba(255,215,0,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(220,20,60,0.1) 0%, transparent 50%);
+}
+
+.container {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 10px;
+}
+
+/* Казино хедер */
+.casino-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, var(--casino-red), var(--casino-purple));
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 20px rgba(220, 20, 60, 0.3);
+    border: 2px solid var(--casino-gold);
+}
+
+.jackpot-display {
+    text-align: center;
+}
+
+.jackpot-text {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: var(--casino-gold);
+    text-shadow: 0 0 10px rgba(255,215,0,0.5);
+}
+
+.jackpot-amount {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: white;
+}
+
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mellstroy-avatar {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--casino-gold), var(--casino-red));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: white;
+    border: 2px solid var(--casino-gold);
+    box-shadow: 0 0 15px rgba(255,215,0,0.5);
+}
+
+.player-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.energy-display, .stars-display {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+/* Навигация */
+.game-nav {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.nav-btn {
+    padding: 10px 5px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 8px;
+    color: var(--casino-light);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.8em;
+    text-align: center;
+}
+
+.nav-btn.active {
+    background: linear-gradient(135deg, var(--casino-gold), var(--casino-red));
+    color: var(--casino-dark);
+    box-shadow: 0 0 10px rgba(255,215,0,0.5);
+}
+
+.nav-btn:hover {
+    background: rgba(255,215,0,0.2);
+}
+
+/* Игровая область */
+.game-area {
+    transition: all 0.3s ease;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active-tab {
+    display: block;
+}
+
+.level-info {
+    text-align: center;
+    background: rgba(255,255,255,0.1);
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255,215,0,0.3);
+}
+
+.level-info h2 {
+    color: var(--casino-gold);
+    margin-bottom: 10px;
+    text-shadow: 0 0 10px rgba(255,215,0,0.5);
+}
+
+.moves-counter, .time-counter {
+    font-size: 1em;
+    color: var(--casino-light);
+    margin: 5px 0;
+}
+
+/* Игровое поле */
+.game-board {
+    display: grid;
+    gap: 3px;
+    background: rgba(0,0,0,0.5);
+    padding: 8px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border: 2px solid var(--casino-gold);
+    box-shadow: 0 0 20px rgba(255,215,0,0.2);
+}
+
+.cell {
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3em;
+    font-weight: bold;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.empty { 
+    background: rgba(255,255,255,0.05); 
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.wall { 
+    background: linear-gradient(135deg, #8B4513, #A0522D);
+    border: 1px solid #654321;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+}
+.box { 
+    background: linear-gradient(135deg, #32CD32, #228B22);
+    color: white;
+    border: 2px solid #FFD700;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+.target { 
+    background: radial-gradient(circle, #FF0000, #8B0000);
+    border: 1px solid #FF4500;
+}
+.box-on-target { 
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #8B0000;
+    border: 2px solid #FF4500;
+    box-shadow: 0 0 10px rgba(255,215,0,0.5);
+}
+.player { 
+    background: linear-gradient(135deg, #FF0000, #DC143C);
+    color: white;
+    border: 2px solid #FFD700;
+    box-shadow: 0 0 15px rgba(220,20,60,0.5);
+}
+
+/* Кнопки казино */
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.btn-casino {
+    background: linear-gradient(135deg, var(--casino-gold), var(--casino-red));
+    color: var(--casino-dark);
+    box-shadow: 0 4px 15px rgba(220,20,60,0.3);
+}
+
+.btn-secondary {
+    background: rgba(255,255,255,0.1);
+    color: var(--casino-light);
+    border: 1px solid rgba(255,215,0,0.3);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220,20,60,0.4);
+}
+
+/* Магазин */
+.shop-section {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid rgba(255,215,0,0.3);
+}
+
+.shop-section h3 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: var(--casino-gold);
+}
+
+.shop-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.shop-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(220,20,60,0.1));
+    border: 1px solid rgba(255,215,0,0.5);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.shop-item:hover {
+    background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(220,20,60,0.2));
+    transform: translateX(5px);
+    box-shadow: 0 0 15px rgba(255,215,0,0.3);
+}
+
+.price {
+    background: linear-gradient(135deg, var(--casino-gold), var(--casino-red));
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: bold;
+    color: var(--casino-dark);
+}
+
+/* Достижения */
+.achievements-container {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid rgba(255,215,0,0.3);
+}
+
+.achievements-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.achievement-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(255,215,0,0.2);
+    transition: all 0.3s ease;
+}
+
+.achievement-item.unlocked {
+    background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(220,20,60,0.1));
+    border-color: var(--casino-gold);
+}
+
+.achievement-item.locked {
+    opacity: 0.6;
+}
+
+.achievement-icon {
+    font-size: 2em;
+    width: 50px;
+    text-align: center;
+}
+
+.achievement-info {
+    flex: 1;
+}
+
+.achievement-name {
+    font-weight: bold;
+    color: var(--casino-light);
+    margin-bottom: 5px;
+}
+
+.achievement-desc {
+    font-size: 0.9em;
+    color: rgba(255,255,255,0.7);
+}
+
+.achievement-progress {
+    width: 100%;
+    height: 5px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 5px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+
+.achievement-progress-bar {
+    height: 100%;
+    background: linear-gradient(135deg, var(--casino-gold), var(--casino-red));
+    border-radius: 5px;
+    transition: width 0.3s ease;
+}
+
+/* Таблица лидеров */
+.leaderboard-container {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid rgba(255,215,0,0.3);
+}
+
+.leaderboard-tabs {
+    display: flex;
+    gap: 5px;
+    margin: 15px 0;
+}
+
+.leaderboard-tab {
+    flex: 1;
+    padding: 10px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 8px;
+    color: var(--casino-light);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.leaderboard-tab.active {
+    background: linear-gradient(135deg, var(--casino-gold), var(--casino-red));
+    color: var(--casino-dark);
+}
+
+.leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(255,215,0,0.2);
+}
+
+.leaderboard-rank {
+    width: 25px;
+    height: 25px;
+    background: linear-gradient(135deg, var(--casino-gold), var(--casino-red));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: var(--casino-dark);
+    font-size: 0.8em;
+}
+
+.leaderboard-player {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.leaderboard-name {
+    font-weight: bold;
+}
+
+.leaderboard-score {
+    font-size: 0.9em;
+    color: var(--casino-gold);
+}
+
+/* Статистика */
+.stats-container {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid rgba(255,215,0,0.3);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    background: rgba(255,255,255,0.05);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,215,0,0.2);
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.8em;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--casino-gold);
+}
+
+/* Настройки */
+.settings-container {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid rgba(255,215,0,0.3);
+}
+
+.settings-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(255,215,0,0.2);
+}
+
+/* Переключатель */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background: linear-gradient(135deg, var(--casino-gold), var(--casino-red));
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* Селектор темы */
+#theme-selector {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 8px;
+    padding: 8px;
+    color: var(--casino-light);
+    width: 120px;
+}
+
+/* Модальные окна */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 300px;
+    width: 90%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 2px solid var(--casino-gold);
+}
+
+.casino-modal {
+    background: linear-gradient(135deg, var(--casino-dark), #1a1a2e);
+}
+
+.achievement-modal {
+    background: linear-gradient(135deg, #8B4513, #A0522D);
+    border-color: var(--casino-gold);
+}
+
+.achievement-badge {
+    font-size: 3em;
+    margin-bottom: 15px;
+}
+
+.modal h2 {
+    margin-bottom: 15px;
+    color: var(--casino-gold);
+    text-shadow: 0 0 10px rgba(255,215,0,0.5);
+}
+
+.modal p {
+    margin-bottom: 20px;
+    color: var(--casino-light);
+}
+
+.stars-earned {
+    color: var(--casino-gold);
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Анимации */
+@keyframes celebrate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255,215,0,0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(255,215,0,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,215,0,0); }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.celebrating {
+    animation: celebrate 0.5s ease-in-out;
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+    .container {
+        padding: 5px;
+    }
+    
+    .cell {
+        width: 30px;
+        height: 30px;
+        font-size: 1.1em;
+    }
+    
+    .game-nav {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-buttons {
+        flex-direction: column;
+    }
+}
+
+/* Темы */
+body.theme-dark {
+    background: linear-gradient(135deg, #0c0c0c, #1a1a1a);
+    color: #ffffff;
+}
+
+body.theme-luxury {
+    background: linear-gradient(135deg, #2c0b0e, #1a0b0e);
+    color: #ffd700;
+}
+
+body.theme-money {
+    background: linear-gradient(135deg, #006400, #004d00);
+    color: #ffffff;
+}
