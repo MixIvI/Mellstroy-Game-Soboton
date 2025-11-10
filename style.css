@@ -694,4 +694,63 @@ body.theme-luxury {
 body.theme-money {
     background: linear-gradient(135deg, #006400, #004d00);
     color: #ffffff;
+
+}
+/* Мобильные исправления для Telegram */
+@media (max-width: 768px) {
+    .game-board {
+        gap: 1px;
+        padding: 3px;
+    }
+    
+    .cell {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        min-height: 30px !important;
+        font-size: 14px !important;
+    }
+    
+    .nav-btn {
+        padding: 8px 4px;
+        font-size: 0.7em;
+    }
+    
+    .controls {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .btn {
+        padding: 10px;
+        font-size: 0.9em;
+    }
+    
+    /* Улучшаем отзывчивость кнопок */
+    .nav-btn:active, .btn:active, .shop-item:active {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+}
+
+/* Гарантируем что кнопки работают на мобильных */
+.nav-btn, .btn, .shop-item {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+}
+
+/* Исправляем отображение вкладок */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active-tab {
+    display: block !important;
+}
+
+/* Гарантируем что игровое поле обновляется */
+.game-board {
+    will-change: transform;
+    backface-visibility: hidden;
 }
