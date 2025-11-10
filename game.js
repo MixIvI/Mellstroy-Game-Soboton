@@ -14,6 +14,10 @@ class MellstroyGame {
         this.timerInterval = null;
         this.levelStartTime = 0;
         this.animationsEnabled = true;
+        this.levelCompleted = false;
+        
+        // Сохраняем оригинальные уровни для перезапуска
+        this.originalLevels = JSON.parse(JSON.stringify(levels));
         
         this.stats = {
             levelsCompleted: 0,
@@ -400,6 +404,9 @@ class MellstroyGame {
             return;
         }
 
+        // Не обрабатываем ходы если уровень завершен
+        if (this.levelCompleted) return;
+
         let dx = 0, dy = 0;
         
         switch(e.key) {
@@ -597,6 +604,9 @@ class MellstroyGame {
             return;
         }
 
+        // Не обрабатываем ходы если уровень завершен
+        if (this.levelCompleted) return;
+
         try {
             const level = levels[this.currentLevel - 1];
             // Создаем глубокую копию сетки для работы
@@ -661,7 +671,7 @@ class MellstroyGame {
             
             this.moves++;
             this.soundSystem.play('move');
-            this.checkLevelComplete(grid);
+            this.checkLevelComplete();
             this.renderLevel();
         } catch (error) {
             console.error('Error executing move:', error);
@@ -683,7 +693,7 @@ class MellstroyGame {
             
             this.moves++;
             this.soundSystem.play('push');
-            this.checkLevelComplete(grid);
+            this.checkLevelComplete();
             this.renderLevel();
         } catch (error) {
             console.error('Error executing push:', error);
@@ -702,10 +712,12 @@ class MellstroyGame {
     }
 
     // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Правильная проверка завершения уровня
-    checkLevelComplete(grid) {
+    checkLevelComplete() {
         try {
-            // Уровень завершен, когда все коробки находятся на целях
-            // Это означает, что не должно остаться коробок '$' и целей '.'
+            const level = levels[this.currentLevel - 1];
+            const grid = level.grid;
+            
+            // Уровень завершен, когда все цели заняты коробками (нет '$' и '.')
             let hasBox = false;
             let hasTarget = false;
             
@@ -727,11 +739,12 @@ class MellstroyGame {
             
             console.log('Level complete check:', { hasBox, hasTarget, levelComplete });
 
-            if (levelComplete) {
+            if (levelComplete && !this.levelCompleted) {
+                this.levelCompleted = true;
                 this.stopTimer();
                 setTimeout(() => {
                     this.completeLevel();
-                }, 300);
+                }, 500);
             }
         } catch (error) {
             console.error('Error checking level completion:', error);
@@ -831,6 +844,7 @@ class MellstroyGame {
     nextLevel() {
         try {
             this.hideModals();
+            this.levelCompleted = false;
             this.currentLevel = Math.min(this.currentLevel + 1, levels.length);
             this.moves = 0;
             this.history = [];
@@ -851,8 +865,14 @@ class MellstroyGame {
         try {
             this.energy--;
             this.stats.energySpent++;
+            this.levelCompleted = false;
             this.moves = 0;
             this.history = [];
+            
+            // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Восстанавливаем исходное состояние уровня
+            const originalLevel = this.originalLevels[this.currentLevel - 1];
+            levels[this.currentLevel - 1] = JSON.parse(JSON.stringify(originalLevel));
+            
             this.startTimer();
             this.renderLevel();
             this.saveGameState();
@@ -864,7 +884,7 @@ class MellstroyGame {
 
     undoMove() {
         try {
-            if (this.history.length > 0) {
+            if (this.history.length > 0 && !this.levelCompleted) {
                 const previousState = this.history.pop();
                 // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Правильно восстанавливаем уровень
                 levels[this.currentLevel - 1].grid = previousState;
@@ -992,8 +1012,8 @@ class MellstroyGame {
                     restartBtn.style.opacity = '1';
                 }
                 if (undoBtn) {
-                    undoBtn.disabled = this.history.length === 0;
-                    undoBtn.style.opacity = this.history.length === 0 ? '0.5' : '1';
+                    undoBtn.disabled = this.history.length === 0 || this.levelCompleted;
+                    undoBtn.style.opacity = (this.history.length === 0 || this.levelCompleted) ? '0.5' : '1';
                 }
             }
         } catch (error) {
