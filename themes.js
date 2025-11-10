@@ -53,33 +53,47 @@ class ThemeSystem {
     }
 
     loadTheme() {
-        const saved = localStorage.getItem('mellstroy_theme');
-        if (saved && themes[saved]) {
-            this.currentTheme = saved;
+        try {
+            const saved = localStorage.getItem('mellstroy_theme');
+            if (saved && themes[saved]) {
+                this.currentTheme = saved;
+            }
+            this.applyTheme(this.currentTheme);
+        } catch (error) {
+            console.error('Error loading theme:', error);
         }
-        this.applyTheme(this.currentTheme);
     }
 
     applyTheme(themeName) {
-        const theme = themes[themeName];
-        if (!theme) return;
+        try {
+            const theme = themes[themeName];
+            if (!theme) return;
 
-        // Удаляем предыдущие классы тем
-        Object.values(themes).forEach(t => {
-            document.body.classList.remove(t.class);
-        });
+            // Удаляем предыдущие классы тем
+            Object.values(themes).forEach(t => {
+                document.body.classList.remove(t.class);
+            });
 
-        // Добавляем новую тему
-        document.body.classList.add(theme.class);
-        
-        // Применяем CSS переменные
-        const root = document.documentElement;
-        Object.entries(theme.colors).forEach(([key, value]) => {
-            root.style.setProperty(`--casino-${key}`, value);
-        });
+            // Добавляем новую тему
+            document.body.classList.add(theme.class);
+            
+            // Применяем CSS переменные
+            const root = document.documentElement;
+            Object.entries(theme.colors).forEach(([key, value]) => {
+                root.style.setProperty(`--casino-${key}`, value);
+            });
 
-        this.currentTheme = themeName;
-        localStorage.setItem('mellstroy_theme', themeName);
+            this.currentTheme = themeName;
+            localStorage.setItem('mellstroy_theme', themeName);
+
+            // Обновляем селектор темы в настройках
+            const themeSelector = document.getElementById('theme-selector');
+            if (themeSelector) {
+                themeSelector.value = themeName;
+            }
+        } catch (error) {
+            console.error('Error applying theme:', error);
+        }
     }
 
     getCurrentTheme() {
