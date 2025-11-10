@@ -1,0 +1,24 @@
+/* Замена изображений CSS */
+.mellstroy-avatar {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #FF0000, #DC143C);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    border: 3px solid #FFD700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.casino-bg {
+    background: linear-gradient(135deg, 
+        #0A0A0A 0%, 
+        #1a1a2e 25%, 
+        #DC143C 50%, 
+        #8A2BE2 75%, 
+        #16213e 100%);
+}

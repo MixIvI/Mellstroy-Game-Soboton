@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mellstroy Game Soboton - Казино Коробки</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Хедер казино -->
+        <header class="casino-header">
+            <div class="jackpot-display">
+                <div class="jackpot-text">ДЖЕКПОТ</div>
+                <div class="jackpot-amount">🎰 <span id="jackpot-value">1.000.000</span> ₽</div>
+            </div>
+            
+            <div class="player-info">
+                <div class="player-avatar">
+                    <div class="mellstroy-avatar">M</div>
+                </div>
+                <div class="player-stats">
+                    <div class="energy-display">
+                        <span class="energy-icon">🍾</span>
+                        <span id="energy-count">3</span>
+                        <span class="energy-text">энергии</span>
+                    </div>
+                    <div class="stars-display">
+                        <span class="stars-icon">💎</span>
+                        <span id="stars-count">0</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Навигация -->
+        <nav class="game-nav">
+            <button class="nav-btn active" data-tab="game">🎮 Игра</button>
+            <button class="nav-btn" data-tab="achievements">🏆 Достижения</button>
+            <button class="nav-btn" data-tab="leaderboard">📊 Топ Игроков</button>
+            <button class="nav-btn" data-tab="stats">📈 Статистика</button>
+            <button class="nav-btn" data-tab="settings">⚙️ Настройки</button>
+        </nav>
+
+        <!-- Основной игровой экран -->
+        <main class="game-area active-tab" id="game-tab">
+            <div class="level-info">
+                <h2>Уровень <span id="current-level">1</span>/100</h2>
+                <div class="moves-counter">Ходы: <span id="moves">0</span></div>
+                <div class="time-counter">Время: <span id="timer">00:00</span></div>
+            </div>
+            
+            <div id="game-board" class="game-board"></div>
+            
+            <div class="controls">
+                <button id="restart-btn" class="btn btn-casino">🔄 Перезапуск</button>
+                <button id="undo-btn" class="btn btn-casino">↩️ Отменить</button>
+            </div>
+
+            <div class="shop-section">
+                <h3>💎 Казино Магазин</h3>
+                <div class="shop-items">
+                    <div class="shop-item" data-energy="1" data-price="5">
+                        <span>+1 энергия</span>
+                        <span class="price">💎5</span>
+                    </div>
+                    <div class="shop-item" data-energy="3" data-price="12">
+                        <span>+3 энергии</span>
+                        <span class="price">💎12</span>
+                    </div>
+                    <div class="shop-item" data-energy="5" data-price="18">
+                        <span>VIP пакет (+5)</span>
+                        <span class="price">💎18</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Вкладка достижений -->
+        <div class="tab-content" id="achievements-tab">
+            <div class="achievements-container">
+                <h2>🏆 Достижения Mellstroy</h2>
+                <div id="achievements-list" class="achievements-list">
+                    <!-- Достижения будут загружены через JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка таблицы лидеров -->
+        <div class="tab-content" id="leaderboard-tab">
+            <div class="leaderboard-container">
+                <h2>📊 Топ Игроков Казино</h2>
+                <div class="leaderboard-tabs">
+                    <button class="leaderboard-tab active" data-type="levels">По уровням</button>
+                    <button class="leaderboard-tab" data-type="moves">По ходам</button>
+                    <button class="leaderboard-tab" data-type="stars">По алмазам</button>
+                </div>
+                <div id="leaderboard-list" class="leaderboard-list">
+                    <!-- Таблица лидеров будет загружена через JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка статистики -->
+        <div class="tab-content" id="stats-tab">
+            <div class="stats-container">
+                <h2>📈 Статистика Игры</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Всего уровней пройдено</span>
+                        <span class="stat-value" id="stat-levels-completed">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Всего ходов</span>
+                        <span class="stat-value" id="stat-total-moves">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Среднее время уровня</span>
+                        <span class="stat-value" id="stat-avg-time">00:00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Лучшая серия</span>
+                        <span class="stat-value" id="stat-best-streak">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Всего заработано алмазов</span>
+                        <span class="stat-value" id="stat-total-stars">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Достижений получено</span>
+                        <span class="stat-value" id="stat-achievements">0/20</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка настроек -->
+        <div class="tab-content" id="settings-tab">
+            <div class="settings-container">
+                <h2>⚙️ Настройки Казино</h2>
+                <div class="settings-options">
+                    <div class="setting-item">
+                        <span>🔊 Звуки</span>
+                        <label class="switch">
+                            <input type="checkbox" id="sound-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>🎨 Тема оформления</span>
+                        <select id="theme-selector">
+                            <option value="casino">Казино</option>
+                            <option value="dark">Темная</option>
+                            <option value="luxury">Люкс</option>
+                            <option value="money">Деньги</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <span>⚡ Анимации</span>
+                        <label class="switch">
+                            <input type="checkbox" id="animations-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальные окна -->
+        <div id="level-complete" class="modal hidden">
+            <div class="modal-content casino-modal">
+                <h2>🎉 Уровень пройден!</h2>
+                <p>Вы заработали <span class="stars-earned">💎<span id="stars-earned">5</span></span></p>
+                <p>Завершено за <span id="final-moves">0</span> ходов за <span id="final-time">00:00</span></p>
+                <button id="next-level-btn" class="btn btn-casino">🎰 Следующий уровень</button>
+            </div>
+        </div>
+
+        <div id="no-energy" class="modal hidden">
+            <div class="modal-content casino-modal">
+                <h2>😴 Закончилась энергия!</h2>
+                <p>Купите больше энергии в казино магазине</p>
+                <div class="modal-buttons">
+                    <button id="buy-energy-btn" class="btn btn-casino">💎 Купить энергию</button>
+                    <button id="close-modal-btn" class="btn btn-secondary">Закрыть</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="achievement-unlocked" class="modal hidden">
+            <div class="modal-content achievement-modal">
+                <div class="achievement-badge">🏆</div>
+                <h2>Достижение разблокировано!</h2>
+                <h3 id="achievement-title">Название достижения</h3>
+                <p id="achievement-desc">Описание достижения</p>
+                <button class="btn btn-casino" onclick="game.hideAchievementModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Аудио элементы -->
+    <audio id="move-sound" src="assets/sounds/move.mp3" preload="auto"></audio>
+    <audio id="push-sound" src="assets/sounds/push.mp3" preload="auto"></audio>
+    <audio id="complete-sound" src="assets/sounds/complete.mp3" preload="auto"></audio>
+    <audio id="achievement-sound" src="assets/sounds/achievement.mp3" preload="auto"></audio>
+    <audio id="cash-sound" src="assets/sounds/cash.mp3" preload="auto"></audio>
+
+    <script src="levels.js"></script>
+    <script src="achievements.js"></script>
+    <script src="sounds.js"></script>
+    <script src="themes.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
