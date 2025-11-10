@@ -1,5 +1,9 @@
 class MellstroyGame {
     constructor() {
+        // Определяем мобильное устройство
+        this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        console.log('Mobile device detected:', this.isMobile);
+        
         this.currentLevel = 1;
         this.moves = 0;
         this.energy = 3;
@@ -9,6 +13,7 @@ class MellstroyGame {
         this.gameTime = 0;
         this.timerInterval = null;
         this.levelStartTime = 0;
+        this.animationsEnabled = true;
         
         this.stats = {
             levelsCompleted: 0,
@@ -35,26 +40,56 @@ class MellstroyGame {
             '*': 'box-on-target'
         };
 
-        // Безопасная инициализация Telegram
+        // Безопасная инициализация Telegram Web App
         try {
             this.Telegram = window.Telegram?.WebApp;
             if (this.Telegram) {
+                console.log('Telegram Web App detected, initializing...');
                 this.Telegram.ready();
                 this.Telegram.expand();
+                this.Telegram.setHeaderColor('#0A0A0A');
+                this.Telegram.setBackgroundColor('#0A0A0A');
                 console.log('Telegram Web App initialized successfully');
+            } else {
+                console.log('Telegram Web App not available, running in browser mode');
             }
         } catch (error) {
-            console.log('Telegram initialization error:', error);
+            console.error('Telegram Web App initialization error:', error);
             this.Telegram = null;
         }
 
-        // Инициализация систем
+        // Безопасная инициализация систем
         try {
             this.soundSystem = new SoundSystem();
+        } catch (error) {
+            console.error('SoundSystem initialization error:', error);
+            this.soundSystem = { 
+                play: () => {}, 
+                setEnabled: () => {},
+                enabled: false 
+            };
+        }
+
+        try {
             this.themeSystem = new ThemeSystem();
+        } catch (error) {
+            console.error('ThemeSystem initialization error:', error);
+            this.themeSystem = {
+                applyTheme: () => {},
+                getCurrentTheme: () => 'casino'
+            };
+        }
+
+        try {
             this.achievementSystem = new AchievementSystem(this);
         } catch (error) {
-            console.log('System initialization error:', error);
+            console.error('AchievementSystem initialization error:', error);
+            this.achievementSystem = {
+                checkAchievements: () => [],
+                renderAchievementsList: () => {},
+                getUnlockedCount: () => 0,
+                getTotalCount: () => 0
+            };
         }
 
         this.loadGameState();
@@ -64,280 +99,299 @@ class MellstroyGame {
         this.updateAllDisplays();
     }
 
-    initializeGame() {
-        this.Telegram = window.Telegram?.WebApp;
-        if (this.Telegram) {
-            this.Telegram.ready();
-            this.Telegram.expand();
-            this.loadTelegramData();
-        }
-    }
-
     loadTelegramData() {
-        const user = this.Telegram?.initDataUnsafe?.user;
-        if (user) {
-            console.log('Telegram user:', user);
-            // Можно использовать данные пользователя для персонализации
+        try {
+            const user = this.Telegram?.initDataUnsafe?.user;
+            if (user) {
+                console.log('Telegram user:', user);
+            }
+        } catch (error) {
+            console.error('Error loading Telegram data:', error);
         }
     }
 
     loadGameState() {
-        const saved = localStorage.getItem('mellstroy_save');
-        if (saved) {
-            const data = JSON.parse(saved);
-            this.currentLevel = data.level || 1;
-            this.energy = data.energy || 3;
-            this.stars = data.stars || 0;
-            this.stats = data.stats || this.stats;
-            this.lastPlayed = data.lastPlayed;
-            
-            this.restoreEnergyOverTime();
-            this.checkConsecutiveDays();
+        try {
+            const saved = localStorage.getItem('mellstroy_save');
+            if (saved) {
+                const data = JSON.parse(saved);
+                this.currentLevel = data.level || 1;
+                this.energy = data.energy || 3;
+                this.stars = data.stars || 0;
+                this.stats = data.stats || this.stats;
+                this.lastPlayed = data.lastPlayed;
+                
+                this.restoreEnergyOverTime();
+                this.checkConsecutiveDays();
+            }
+        } catch (error) {
+            console.error('Error loading game state:', error);
         }
         
         this.updateUI();
     }
 
     saveGameState() {
-        const data = {
-            level: this.currentLevel,
-            energy: this.energy,
-            stars: this.stars,
-            stats: this.stats,
-            lastPlayed: new Date().toISOString()
-        };
-        localStorage.setItem('mellstroy_save', JSON.stringify(data));
+        try {
+            const data = {
+                level: this.currentLevel,
+                energy: this.energy,
+                stars: this.stars,
+                stats: this.stats,
+                lastPlayed: new Date().toISOString()
+            };
+            localStorage.setItem('mellstroy_save', JSON.stringify(data));
+        } catch (error) {
+            console.error('Error saving game state:', error);
+        }
     }
 
     restoreEnergyOverTime() {
         if (!this.lastPlayed) return;
         
-        const lastPlayed = new Date(this.lastPlayed);
-        const now = new Date();
-        const hoursDiff = (now - lastPlayed) / (1000 * 60 * 60);
-        
-        if (hoursDiff >= 24) {
-            this.energy = 3;
-            this.saveGameState();
+        try {
+            const lastPlayed = new Date(this.lastPlayed);
+            const now = new Date();
+            const hoursDiff = (now - lastPlayed) / (1000 * 60 * 60);
+            
+            if (hoursDiff >= 24) {
+                this.energy = 3;
+                this.saveGameState();
+            }
+        } catch (error) {
+            console.error('Error restoring energy:', error);
         }
     }
 
     checkConsecutiveDays() {
-        // Упрощенная проверка последовательных дней
-        // В реальной игре нужно более сложная логика
-        if (this.lastPlayed) {
-            const last = new Date(this.lastPlayed);
-            const now = new Date();
-            const diffDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
-            
-            if (diffDays === 1) {
-                this.stats.consecutiveDays++;
-            } else if (diffDays > 1) {
-                this.stats.consecutiveDays = 0;
+        try {
+            if (this.lastPlayed) {
+                const last = new Date(this.lastPlayed);
+                const now = new Date();
+                const diffDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
+                
+                if (diffDays === 1) {
+                    this.stats.consecutiveDays++;
+                } else if (diffDays > 1) {
+                    this.stats.consecutiveDays = 0;
+                }
             }
+        } catch (error) {
+            console.error('Error checking consecutive days:', error);
         }
     }
 
     setupEventListeners() {
-    try {
-        // Кнопки управления
-        const restartBtn = document.getElementById('restart-btn');
-        const undoBtn = document.getElementById('undo-btn');
-        const nextLevelBtn = document.getElementById('next-level-btn');
-        const buyEnergyBtn = document.getElementById('buy-energy-btn');
-        const closeModalBtn = document.getElementById('close-modal-btn');
+        try {
+            // Кнопки управления
+            const restartBtn = document.getElementById('restart-btn');
+            const undoBtn = document.getElementById('undo-btn');
+            const nextLevelBtn = document.getElementById('next-level-btn');
+            const buyEnergyBtn = document.getElementById('buy-energy-btn');
+            const closeModalBtn = document.getElementById('close-modal-btn');
 
-        if (restartBtn) {
-            restartBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.restartLevel();
-            });
-            restartBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.restartLevel();
-            });
-        }
-
-        if (undoBtn) {
-            undoBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.undoMove();
-            });
-            undoBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.undoMove();
-            });
-        }
-
-        if (nextLevelBtn) {
-            nextLevelBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.nextLevel();
-            });
-            nextLevelBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.nextLevel();
-            });
-        }
-
-        if (buyEnergyBtn) {
-            buyEnergyBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.showShop();
-            });
-            buyEnergyBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.showShop();
-            });
-        }
-
-        if (closeModalBtn) {
-            closeModalBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.hideModals();
-            });
-            closeModalBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.hideModals();
-            });
-        }
-
-        // Навигация по вкладкам
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const tab = e.currentTarget.getAttribute('data-tab');
-                this.switchTab(tab);
-            });
-            btn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const tab = e.currentTarget.getAttribute('data-tab');
-                this.switchTab(tab);
-            });
-        });
-
-        // Магазин
-        document.querySelectorAll('.shop-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const energy = parseInt(e.currentTarget.getAttribute('data-energy'));
-                const price = parseInt(e.currentTarget.getAttribute('data-price'));
-                this.purchaseEnergy(energy, price);
-            });
-            item.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const energy = parseInt(e.currentTarget.getAttribute('data-energy'));
-                const price = parseInt(e.currentTarget.getAttribute('data-price'));
-                this.purchaseEnergy(energy, price);
-            });
-        });
-
-        // Настройки
-        const soundToggle = document.getElementById('sound-toggle');
-        const animationsToggle = document.getElementById('animations-toggle');
-        const themeSelector = document.getElementById('theme-selector');
-
-        if (soundToggle) {
-            soundToggle.addEventListener('change', (e) => {
-                this.soundSystem.setEnabled(e.target.checked);
-            });
-        }
-
-        if (animationsToggle) {
-            animationsToggle.addEventListener('change', (e) => {
-                this.animationsEnabled = e.target.checked;
-            });
-        }
-
-        if (themeSelector) {
-            themeSelector.addEventListener('change', (e) => {
-                this.themeSystem.applyTheme(e.target.value);
-            });
-        }
-
-        // Таблица лидеров
-        document.querySelectorAll('.leaderboard-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const type = e.currentTarget.getAttribute('data-type');
-                this.switchLeaderboard(type);
-            });
-            tab.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const type = e.currentTarget.getAttribute('data-type');
-                this.switchLeaderboard(type);
-            });
-        });
-
-        // Управление с клавиатуры
-        document.addEventListener('keydown', (e) => this.handleKeyPress(e));
-
-        // Обработка свайпов для мобильных устройств
-        this.setupTouchControls();
-        
-        // Принудительное обновление интерфейса
-        setTimeout(() => {
-            this.updateAllDisplays();
-        }, 1000);
-        
-    } catch (error) {
-        console.error('Error setting up event listeners:', error);
-    }
-}
-
-    setupTouchControls() {
-        let startX, startY;
-        const gameBoard = document.getElementById('game-board');
-
-        gameBoard.addEventListener('touchstart', (e) => {
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-            e.preventDefault();
-        });
-
-        gameBoard.addEventListener('touchend', (e) => {
-            if (!startX || !startY) return;
-
-            const endX = e.changedTouches[0].clientX;
-            const endY = e.changedTouches[0].clientY;
-            
-            const diffX = startX - endX;
-            const diffY = startY - endY;
-
-            if (Math.abs(diffX) > Math.abs(diffY)) {
-                // Горизонтальный свайп
-                if (Math.abs(diffX) > 30) {
-                    if (diffX > 0) this.movePlayer(-1, 0); // Влево
-                    else this.movePlayer(1, 0); // Вправо
-                }
-            } else {
-                // Вертикальный свайп
-                if (Math.abs(diffY) > 30) {
-                    if (diffY > 0) this.movePlayer(0, -1); // Вверх
-                    else this.movePlayer(0, 1); // Вниз
-                }
+            if (restartBtn) {
+                restartBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.restartLevel();
+                });
+                restartBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.restartLevel();
+                }, { passive: false });
             }
 
-            startX = null;
-            startY = null;
-            e.preventDefault();
-        });
+            if (undoBtn) {
+                undoBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.undoMove();
+                });
+                undoBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.undoMove();
+                }, { passive: false });
+            }
+
+            if (nextLevelBtn) {
+                nextLevelBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.nextLevel();
+                });
+                nextLevelBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.nextLevel();
+                }, { passive: false });
+            }
+
+            if (buyEnergyBtn) {
+                buyEnergyBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.showShop();
+                });
+                buyEnergyBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.showShop();
+                }, { passive: false });
+            }
+
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.hideModals();
+                });
+                closeModalBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.hideModals();
+                }, { passive: false });
+            }
+
+            // Навигация по вкладкам
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const tab = e.currentTarget.getAttribute('data-tab');
+                    this.switchTab(tab);
+                });
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const tab = e.currentTarget.getAttribute('data-tab');
+                    this.switchTab(tab);
+                }, { passive: false });
+            });
+
+            // Магазин
+            document.querySelectorAll('.shop-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const energy = parseInt(e.currentTarget.getAttribute('data-energy'));
+                    const price = parseInt(e.currentTarget.getAttribute('data-price'));
+                    this.purchaseEnergy(energy, price);
+                });
+                item.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const energy = parseInt(e.currentTarget.getAttribute('data-energy'));
+                    const price = parseInt(e.currentTarget.getAttribute('data-price'));
+                    this.purchaseEnergy(energy, price);
+                }, { passive: false });
+            });
+
+            // Настройки
+            const soundToggle = document.getElementById('sound-toggle');
+            const animationsToggle = document.getElementById('animations-toggle');
+            const themeSelector = document.getElementById('theme-selector');
+
+            if (soundToggle) {
+                soundToggle.addEventListener('change', (e) => {
+                    this.soundSystem.setEnabled(e.target.checked);
+                });
+            }
+
+            if (animationsToggle) {
+                animationsToggle.addEventListener('change', (e) => {
+                    this.animationsEnabled = e.target.checked;
+                });
+            }
+
+            if (themeSelector) {
+                themeSelector.addEventListener('change', (e) => {
+                    this.themeSystem.applyTheme(e.target.value);
+                });
+            }
+
+            // Таблица лидеров
+            document.querySelectorAll('.leaderboard-tab').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const type = e.currentTarget.getAttribute('data-type');
+                    this.switchLeaderboard(type);
+                });
+                tab.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const type = e.currentTarget.getAttribute('data-type');
+                    this.switchLeaderboard(type);
+                }, { passive: false });
+            });
+
+            // Управление с клавиатуры
+            document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+
+            // Обработка свайпов для мобильных устройств
+            this.setupTouchControls();
+            
+            // Принудительное обновление интерфейса
+            setTimeout(() => {
+                this.updateAllDisplays();
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Error setting up event listeners:', error);
+        }
+    }
+
+    setupTouchControls() {
+        try {
+            let startX, startY;
+            const gameBoard = document.getElementById('game-board');
+            const minSwipeDistance = 20;
+
+            if (!gameBoard) return;
+
+            gameBoard.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                e.preventDefault();
+            }, { passive: false });
+
+            gameBoard.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+            }, { passive: false });
+
+            gameBoard.addEventListener('touchend', (e) => {
+                if (!startX || !startY) return;
+
+                const endX = e.changedTouches[0].clientX;
+                const endY = e.changedTouches[0].clientY;
+                
+                const diffX = startX - endX;
+                const diffY = startY - endY;
+
+                // Проверяем минимальное расстояние свайпа
+                if (Math.abs(diffX) > minSwipeDistance || Math.abs(diffY) > minSwipeDistance) {
+                    if (Math.abs(diffX) > Math.abs(diffY)) {
+                        // Горизонтальный свайп
+                        if (diffX > 0) this.movePlayer(-1, 0); // Влево
+                        else this.movePlayer(1, 0); // Вправо
+                    } else {
+                        // Вертикальный свайп
+                        if (diffY > 0) this.movePlayer(0, -1); // Вверх
+                        else this.movePlayer(0, 1); // Вниз
+                    }
+                }
+
+                startX = null;
+                startY = null;
+                e.preventDefault();
+            }, { passive: false });
+            
+        } catch (error) {
+            console.error('Error setting up touch controls:', error);
+        }
     }
 
     handleKeyPress(e) {
@@ -361,115 +415,180 @@ class MellstroyGame {
     }
 
     switchTab(tabName) {
-    try {
-        console.log('Switching to tab:', tabName);
-        
-        // Скрываем все вкладки
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            tab.classList.remove('active-tab');
-            tab.style.display = 'none';
-        });
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
+        try {
+            console.log('Switching to tab:', tabName);
+            
+            // Скрываем все вкладки
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active-tab');
+                tab.style.display = 'none';
+            });
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
 
-        // Показываем выбранную вкладку
-        const targetTab = document.getElementById(`${tabName}-tab`);
-        const targetBtn = document.querySelector(`[data-tab="${tabName}"]`);
-        
-        if (targetTab) {
-            targetTab.classList.add('active-tab');
-            targetTab.style.display = 'block';
-            console.log('Tab shown:', tabName);
-        }
-        
-        if (targetBtn) {
-            targetBtn.classList.add('active');
-        }
-
-        // Принудительное обновление DOM
-        setTimeout(() => {
-            // Обновляем контент вкладки если нужно
-            if (tabName === 'achievements') {
-                this.achievementSystem.renderAchievementsList();
-            } else if (tabName === 'leaderboard') {
-                this.renderLeaderboard('levels');
-            } else if (tabName === 'stats') {
-                this.updateStatsDisplay();
+            // Показываем выбранную вкладку
+            const targetTab = document.getElementById(`${tabName}-tab`);
+            const targetBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            
+            if (targetTab) {
+                targetTab.classList.add('active-tab');
+                targetTab.style.display = 'block';
+                console.log('Tab shown:', tabName);
             }
             
-            // Принудительный reflow
-            if (targetTab) {
-                targetTab.offsetHeight;
+            if (targetBtn) {
+                targetBtn.classList.add('active');
             }
-        }, 50);
-        
-    } catch (error) {
-        console.error('Error switching tab:', error);
+
+            // Принудительное обновление DOM
+            setTimeout(() => {
+                // Обновляем контент вкладки если нужно
+                if (tabName === 'achievements') {
+                    this.achievementSystem.renderAchievementsList();
+                } else if (tabName === 'leaderboard') {
+                    this.renderLeaderboard('levels');
+                } else if (tabName === 'stats') {
+                    this.updateStatsDisplay();
+                }
+                
+                // Принудительный reflow
+                if (targetTab) {
+                    targetTab.offsetHeight;
+                }
+            }, 50);
+            
+        } catch (error) {
+            console.error('Error switching tab:', error);
+        }
     }
-}
 
     switchLeaderboard(type) {
-        document.querySelectorAll('.leaderboard-tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        document.querySelector(`[data-type="${type}"]`).classList.add('active');
-        
-        this.renderLeaderboard(type);
+        try {
+            document.querySelectorAll('.leaderboard-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            const targetTab = document.querySelector(`[data-type="${type}"]`);
+            if (targetTab) targetTab.classList.add('active');
+            
+            this.renderLeaderboard(type);
+        } catch (error) {
+            console.error('Error switching leaderboard:', error);
+        }
     }
 
     startTimer() {
-        this.levelStartTime = Date.now();
-        if (this.timerInterval) clearInterval(this.timerInterval);
-        
-        this.timerInterval = setInterval(() => {
-            this.gameTime = Math.floor((Date.now() - this.levelStartTime) / 1000);
-            this.updateTimerDisplay();
-        }, 1000);
+        try {
+            this.levelStartTime = Date.now();
+            if (this.timerInterval) clearInterval(this.timerInterval);
+            
+            this.timerInterval = setInterval(() => {
+                this.gameTime = Math.floor((Date.now() - this.levelStartTime) / 1000);
+                this.updateTimerDisplay();
+            }, 1000);
+        } catch (error) {
+            console.error('Error starting timer:', error);
+        }
     }
 
     stopTimer() {
-        if (this.timerInterval) {
-            clearInterval(this.timerInterval);
-            this.timerInterval = null;
+        try {
+            if (this.timerInterval) {
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+            }
+        } catch (error) {
+            console.error('Error stopping timer:', error);
         }
     }
 
     updateTimerDisplay() {
-        const minutes = Math.floor(this.gameTime / 60);
-        const seconds = this.gameTime % 60;
-        document.getElementById('timer').textContent = 
-            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        try {
+            const minutes = Math.floor(this.gameTime / 60);
+            const seconds = this.gameTime % 60;
+            const timerElement = document.getElementById('timer');
+            if (timerElement) {
+                timerElement.textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        } catch (error) {
+            console.error('Error updating timer display:', error);
+        }
     }
 
     renderLevel() {
-        const level = levels[this.currentLevel - 1];
-        const board = document.getElementById('game-board');
-        board.innerHTML = '';
-        
-        const rows = level.grid.length;
-        const cols = level.grid[0].length;
-        board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-        board.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-
-        for (let y = 0; y < rows; y++) {
-            for (let x = 0; x < cols; x++) {
-                const cell = document.createElement('div');
-                const cellType = level.grid[y][x];
-                cell.className = `cell ${this.cellTypes[cellType] || 'empty'}`;
-                
-                // Кастомные символы для стиля Mellstroy
-                if (cellType === '@' || cellType === '+') cell.textContent = '🎭'; // Mellstroy
-                else if (cellType === '$') cell.textContent = '💰'; // Деньги
-                else if (cellType === '*') cell.textContent = '💎'; // Деньги в сейфе
-                else if (cellType === '.') cell.textContent = '🏦'; // Сейф
-                else if (cellType === '#') cell.textContent = '🎰'; // Стены казино
-                
-                board.appendChild(cell);
+        try {
+            const level = levels[this.currentLevel - 1];
+            const board = document.getElementById('game-board');
+            if (!board || !level) {
+                console.error('Board or level not found');
+                return;
             }
-        }
+            
+            console.log('Rendering level:', this.currentLevel);
+            
+            // Сохраняем текущий размер
+            const currentWidth = board.offsetWidth;
+            
+            board.innerHTML = '';
+            
+            const rows = level.grid.length;
+            const cols = level.grid[0].length;
+            
+            // Устанавливаем размеры сетки
+            board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            board.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+            
+            // Рассчитываем размер клетки для мобильных устройств
+            const cellSize = Math.min(35, Math.floor(currentWidth / cols) - 2);
+            
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const cell = document.createElement('div');
+                    const cellType = level.grid[y][x];
+                    cell.className = `cell ${this.cellTypes[cellType] || 'empty'}`;
+                    
+                    // Устанавливаем фиксированный размер для мобильных
+                    cell.style.width = `${cellSize}px`;
+                    cell.style.height = `${cellSize}px`;
+                    cell.style.minWidth = `${cellSize}px`;
+                    cell.style.minHeight = `${cellSize}px`;
+                    
+                    // Кастомные символы для стиля Mellstroy
+                    if (cellType === '@' || cellType === '+') {
+                        cell.textContent = '🎭'; // Mellstroy
+                        cell.style.fontSize = `${Math.max(12, cellSize - 15)}px`;
+                    }
+                    else if (cellType === '$') {
+                        cell.textContent = '💰'; // Деньги
+                        cell.style.fontSize = `${Math.max(12, cellSize - 15)}px`;
+                    }
+                    else if (cellType === '*') {
+                        cell.textContent = '💎'; // Деньги в сейфе
+                        cell.style.fontSize = `${Math.max(12, cellSize - 15)}px`;
+                    }
+                    else if (cellType === '.') {
+                        cell.textContent = '🏦'; // Сейф
+                        cell.style.fontSize = `${Math.max(12, cellSize - 15)}px`;
+                    }
+                    else if (cellType === '#') {
+                        cell.textContent = '🎰'; // Стены казино
+                        cell.style.fontSize = `${Math.max(10, cellSize - 20)}px`;
+                    }
+                    
+                    board.appendChild(cell);
+                }
+            }
 
-        this.updateUI();
+            // Принудительное обновление DOM
+            setTimeout(() => {
+                board.offsetHeight; // trigger reflow
+                this.updateUI();
+            }, 10);
+            
+        } catch (error) {
+            console.error('Error rendering level:', error);
+        }
     }
 
     movePlayer(dx, dy) {
@@ -478,110 +597,130 @@ class MellstroyGame {
             return;
         }
 
-        const level = levels[this.currentLevel - 1];
-        const grid = level.grid.map(row => row.split(''));
-        
-        // Находим игрока
-        let playerX, playerY;
-        for (let y = 0; y < grid.length; y++) {
-            for (let x = 0; x < grid[y].length; x++) {
-                if (grid[y][x] === '@' || grid[y][x] === '+') {
-                    playerX = x;
-                    playerY = y;
-                }
-            }
-        }
-
-        const newX = playerX + dx;
-        const newY = playerY + dy;
-
-        // Проверка на выход за границы
-        if (newY < 0 || newY >= grid.length || newX < 0 || newX >= grid[newY].length) {
-            return;
-        }
-
-        const targetCell = grid[newY][newX];
-        
-        // Сохраняем состояние перед ходом
-        this.saveState(grid);
-
-        // Движение в пустую клетку или на цель
-        if (targetCell === ' ' || targetCell === '.') {
-            this.executeMove(grid, playerX, playerY, newX, newY);
-        }
-        // Толкание коробки с деньгами
-        else if (targetCell === '$' || targetCell === '*') {
-            const boxNewX = newX + dx;
-            const boxNewY = newY + dy;
+        try {
+            const level = levels[this.currentLevel - 1];
+            const grid = level.grid.map(row => row.split(''));
             
-            if (boxNewY >= 0 && boxNewY < grid.length && boxNewX >= 0 && boxNewX < grid[boxNewY].length) {
-                const nextCell = grid[boxNewY][boxNewX];
-                
-                if (nextCell === ' ' || nextCell === '.') {
-                    this.executePush(grid, playerX, playerY, newX, newY, boxNewX, boxNewY);
+            // Находим игрока
+            let playerX, playerY;
+            for (let y = 0; y < grid.length; y++) {
+                for (let x = 0; x < grid[y].length; x++) {
+                    if (grid[y][x] === '@' || grid[y][x] === '+') {
+                        playerX = x;
+                        playerY = y;
+                    }
                 }
             }
+
+            const newX = playerX + dx;
+            const newY = playerY + dy;
+
+            // Проверка на выход за границы
+            if (newY < 0 || newY >= grid.length || newX < 0 || newX >= grid[newY].length) {
+                return;
+            }
+
+            const targetCell = grid[newY][newX];
+            
+            // Сохраняем состояние перед ходом
+            this.saveState(grid);
+
+            // Движение в пустую клетку или на цель
+            if (targetCell === ' ' || targetCell === '.') {
+                this.executeMove(grid, playerX, playerY, newX, newY);
+            }
+            // Толкание коробки с деньгами
+            else if (targetCell === '$' || targetCell === '*') {
+                const boxNewX = newX + dx;
+                const boxNewY = newY + dy;
+                
+                if (boxNewY >= 0 && boxNewY < grid.length && boxNewX >= 0 && boxNewX < grid[boxNewY].length) {
+                    const nextCell = grid[boxNewY][boxNewX];
+                    
+                    if (nextCell === ' ' || nextCell === '.') {
+                        this.executePush(grid, playerX, playerY, newX, newY, boxNewX, boxNewY);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error moving player:', error);
         }
     }
 
     executeMove(grid, fromX, fromY, toX, toY) {
-        const fromCell = grid[fromY][fromX];
-        const toCell = grid[toY][toX];
-        
-        grid[toY][toX] = toCell === '.' ? '+' : '@';
-        grid[fromY][fromX] = fromCell === '+' ? '.' : ' ';
-        
-        this.moves++;
-        this.soundSystem.play('move');
-        this.checkLevelComplete(grid);
-        this.renderLevel();
+        try {
+            const fromCell = grid[fromY][fromX];
+            const toCell = grid[toY][toX];
+            
+            grid[toY][toX] = toCell === '.' ? '+' : '@';
+            grid[fromY][fromX] = fromCell === '+' ? '.' : ' ';
+            
+            this.moves++;
+            this.soundSystem.play('move');
+            this.checkLevelComplete(grid);
+            this.renderLevel();
+        } catch (error) {
+            console.error('Error executing move:', error);
+        }
     }
 
     executePush(grid, playerX, playerY, boxX, boxY, newBoxX, newBoxY) {
-        const playerCell = grid[playerY][playerX];
-        const boxCell = grid[boxY][boxX];
-        const newBoxCell = grid[newBoxY][newBoxX];
-        
-        grid[newBoxY][newBoxX] = newBoxCell === '.' ? '*' : '$';
-        grid[boxY][boxX] = boxCell === '*' ? '+' : '@';
-        grid[playerY][playerX] = playerCell === '+' ? '.' : ' ';
-        
-        this.moves++;
-        this.soundSystem.play('push');
-        this.checkLevelComplete(grid);
-        this.renderLevel();
+        try {
+            const playerCell = grid[playerY][playerX];
+            const boxCell = grid[boxY][boxX];
+            const newBoxCell = grid[newBoxY][newBoxX];
+            
+            grid[newBoxY][newBoxX] = newBoxCell === '.' ? '*' : '$';
+            grid[boxY][boxX] = boxCell === '*' ? '+' : '@';
+            grid[playerY][playerX] = playerCell === '+' ? '.' : ' ';
+            
+            this.moves++;
+            this.soundSystem.play('push');
+            this.checkLevelComplete(grid);
+            this.renderLevel();
+        } catch (error) {
+            console.error('Error executing push:', error);
+        }
     }
 
     checkLevelComplete(grid) {
-        const levelComplete = !grid.some(row => 
-            row.includes('$') || row.includes('.')
-        );
+        try {
+            const levelComplete = !grid.some(row => 
+                row.includes('$') || row.includes('.')
+            );
 
-        if (levelComplete) {
-            this.stopTimer();
-            setTimeout(() => {
-                this.completeLevel();
-            }, 300);
+            if (levelComplete) {
+                this.stopTimer();
+                setTimeout(() => {
+                    this.completeLevel();
+                }, 300);
+            }
+        } catch (error) {
+            console.error('Error checking level completion:', error);
         }
     }
 
     completeLevel() {
-        const starsEarned = this.calculateLevelReward();
-        this.stars += starsEarned;
-        this.stats.totalStarsEarned += starsEarned;
-        this.stats.levelsCompleted++;
-        this.stats.totalMoves += this.moves;
-        this.stats.totalTime += this.gameTime;
-        
-        // Проверяем достижения
-        const newAchievements = this.achievementSystem.checkAchievements(this.stats);
-        if (newAchievements.length > 0) {
-            this.showAchievementUnlocked(newAchievements[0]);
-        }
+        try {
+            const starsEarned = this.calculateLevelReward();
+            this.stars += starsEarned;
+            this.stats.totalStarsEarned += starsEarned;
+            this.stats.levelsCompleted++;
+            this.stats.totalMoves += this.moves;
+            this.stats.totalTime += this.gameTime;
+            
+            // Проверяем достижения
+            const newAchievements = this.achievementSystem.checkAchievements(this.stats);
+            if (newAchievements.length > 0) {
+                this.showAchievementUnlocked(newAchievements[0]);
+            }
 
-        this.soundSystem.play('complete');
-        this.showLevelCompleteModal(starsEarned);
-        this.saveGameState();
+            this.soundSystem.play('complete');
+            this.showLevelCompleteModal(starsEarned);
+            this.saveGameState();
+        } catch (error) {
+            console.error('Error completing level:', error);
+        }
     }
 
     calculateLevelReward() {
@@ -593,41 +732,76 @@ class MellstroyGame {
     }
 
     showLevelCompleteModal(starsEarned) {
-        document.getElementById('final-moves').textContent = this.moves;
-        document.getElementById('final-time').textContent = document.getElementById('timer').textContent;
-        document.getElementById('stars-earned').textContent = starsEarned;
-        document.getElementById('level-complete').classList.remove('hidden');
+        try {
+            const finalMoves = document.getElementById('final-moves');
+            const finalTime = document.getElementById('final-time');
+            const starsEarnedElement = document.getElementById('stars-earned');
+            const modal = document.getElementById('level-complete');
+            
+            if (finalMoves) finalMoves.textContent = this.moves;
+            if (finalTime) finalTime.textContent = document.getElementById('timer')?.textContent || '00:00';
+            if (starsEarnedElement) starsEarnedElement.textContent = starsEarned;
+            if (modal) modal.classList.remove('hidden');
+        } catch (error) {
+            console.error('Error showing level complete modal:', error);
+        }
     }
 
     showNoEnergyModal() {
-        document.getElementById('no-energy').classList.remove('hidden');
+        try {
+            const modal = document.getElementById('no-energy');
+            if (modal) modal.classList.remove('hidden');
+        } catch (error) {
+            console.error('Error showing no energy modal:', error);
+        }
     }
 
     showAchievementUnlocked(achievement) {
-        document.getElementById('achievement-title').textContent = achievement.name;
-        document.getElementById('achievement-desc').textContent = achievement.description;
-        document.getElementById('achievement-unlocked').classList.remove('hidden');
-        this.soundSystem.play('achievement');
+        try {
+            const title = document.getElementById('achievement-title');
+            const desc = document.getElementById('achievement-desc');
+            const modal = document.getElementById('achievement-unlocked');
+            
+            if (title) title.textContent = achievement.name;
+            if (desc) desc.textContent = achievement.description;
+            if (modal) modal.classList.remove('hidden');
+            this.soundSystem.play('achievement');
+        } catch (error) {
+            console.error('Error showing achievement modal:', error);
+        }
     }
 
     hideAchievementModal() {
-        document.getElementById('achievement-unlocked').classList.add('hidden');
+        try {
+            const modal = document.getElementById('achievement-unlocked');
+            if (modal) modal.classList.add('hidden');
+        } catch (error) {
+            console.error('Error hiding achievement modal:', error);
+        }
     }
 
     hideModals() {
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.classList.add('hidden');
-        });
+        try {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.classList.add('hidden');
+            });
+        } catch (error) {
+            console.error('Error hiding modals:', error);
+        }
     }
 
     nextLevel() {
-        this.hideModals();
-        this.currentLevel = Math.min(this.currentLevel + 1, levels.length);
-        this.moves = 0;
-        this.history = [];
-        this.startTimer();
-        this.renderLevel();
-        this.saveGameState();
+        try {
+            this.hideModals();
+            this.currentLevel = Math.min(this.currentLevel + 1, levels.length);
+            this.moves = 0;
+            this.history = [];
+            this.startTimer();
+            this.renderLevel();
+            this.saveGameState();
+        } catch (error) {
+            console.error('Error going to next level:', error);
+        }
     }
 
     restartLevel() {
@@ -636,44 +810,66 @@ class MellstroyGame {
             return;
         }
         
-        this.energy--;
-        this.stats.energySpent++;
-        this.moves = 0;
-        this.history = [];
-        this.startTimer();
-        this.renderLevel();
-        this.saveGameState();
-        this.updateUI();
+        try {
+            this.energy--;
+            this.stats.energySpent++;
+            this.moves = 0;
+            this.history = [];
+            this.startTimer();
+            this.renderLevel();
+            this.saveGameState();
+            this.updateUI();
+        } catch (error) {
+            console.error('Error restarting level:', error);
+        }
     }
 
     undoMove() {
-        if (this.history.length > 0) {
-            const previousState = this.history.pop();
-            levels[this.currentLevel - 1].grid = previousState;
-            this.moves--;
-            this.stats.undoUsed++;
-            this.renderLevel();
+        try {
+            if (this.history.length > 0) {
+                const previousState = this.history.pop();
+                levels[this.currentLevel - 1].grid = previousState;
+                this.moves--;
+                this.stats.undoUsed++;
+                this.renderLevel();
+            }
+        } catch (error) {
+            console.error('Error undoing move:', error);
         }
     }
 
     saveState(grid) {
-        const state = grid.map(row => row.join(''));
-        this.history.push(state);
-        
-        if (this.history.length > this.maxHistory) {
-            this.history.shift();
+        try {
+            const state = grid.map(row => row.join(''));
+            this.history.push(state);
+            
+            if (this.history.length > this.maxHistory) {
+                this.history.shift();
+            }
+        } catch (error) {
+            console.error('Error saving state:', error);
         }
     }
 
+    showShop() {
+        this.hideModals();
+        // Магазин уже отображается в основном интерфейсе
+        console.log('Shop opened');
+    }
+
     async purchaseEnergy(energyAmount, price) {
-        if (this.stars >= price) {
-            this.stars -= price;
-            this.energy += energyAmount;
-            this.soundSystem.play('cash');
-            this.saveGameState();
-            this.updateUI();
-        } else {
-            await this.processTelegramPayment(price, energyAmount);
+        try {
+            if (this.stars >= price) {
+                this.stars -= price;
+                this.energy += energyAmount;
+                this.soundSystem.play('cash');
+                this.saveGameState();
+                this.updateUI();
+            } else {
+                await this.processTelegramPayment(price, energyAmount);
+            }
+        } catch (error) {
+            console.error('Error purchasing energy:', error);
         }
     }
 
@@ -707,30 +903,70 @@ class MellstroyGame {
     }
 
     addStars(amount) {
-        this.stars += amount;
-        this.stats.totalStarsEarned += amount;
-        this.updateUI();
+        try {
+            this.stars += amount;
+            this.stats.totalStarsEarned += amount;
+            this.updateUI();
+        } catch (error) {
+            console.error('Error adding stars:', error);
+        }
     }
 
     updateUI() {
-        document.getElementById('current-level').textContent = this.currentLevel;
-        document.getElementById('moves').textContent = this.moves;
-        document.getElementById('energy-count').textContent = this.energy;
-        document.getElementById('stars-count').textContent = this.stars;
-        
-        const restartBtn = document.getElementById('restart-btn');
-        const undoBtn = document.getElementById('undo-btn');
-        
-        if (this.energy <= 0) {
-            restartBtn.disabled = true;
-            undoBtn.disabled = true;
-            restartBtn.style.opacity = '0.5';
-            undoBtn.style.opacity = '0.5';
-        } else {
-            restartBtn.disabled = false;
-            undoBtn.disabled = this.history.length === 0;
-            restartBtn.style.opacity = '1';
-            undoBtn.style.opacity = this.history.length === 0 ? '0.5' : '1';
+        try {
+            const currentLevel = document.getElementById('current-level');
+            const moves = document.getElementById('moves');
+            const energyCount = document.getElementById('energy-count');
+            const starsCount = document.getElementById('stars-count');
+            const restartBtn = document.getElementById('restart-btn');
+            const undoBtn = document.getElementById('undo-btn');
+            
+            if (currentLevel) currentLevel.textContent = this.currentLevel;
+            if (moves) moves.textContent = this.moves;
+            if (energyCount) energyCount.textContent = this.energy;
+            if (starsCount) starsCount.textContent = this.stars;
+            
+            if (this.energy <= 0) {
+                if (restartBtn) {
+                    restartBtn.disabled = true;
+                    restartBtn.style.opacity = '0.5';
+                }
+                if (undoBtn) {
+                    undoBtn.disabled = true;
+                    undoBtn.style.opacity = '0.5';
+                }
+            } else {
+                if (restartBtn) {
+                    restartBtn.disabled = false;
+                    restartBtn.style.opacity = '1';
+                }
+                if (undoBtn) {
+                    undoBtn.disabled = this.history.length === 0;
+                    undoBtn.style.opacity = this.history.length === 0 ? '0.5' : '1';
+                }
+            }
+        } catch (error) {
+            console.error('Error updating UI:', error);
+        }
+    }
+
+    forceUIUpdate() {
+        try {
+            // Принудительно обновляем все счетчики
+            this.updateUI();
+            this.updateStatsDisplay();
+            
+            // Принудительный reflow для игрового поля
+            const gameBoard = document.getElementById('game-board');
+            if (gameBoard) {
+                gameBoard.style.display = 'none';
+                gameBoard.offsetHeight; // trigger reflow
+                gameBoard.style.display = 'grid';
+            }
+            
+            console.log('UI forced update completed');
+        } catch (error) {
+            console.error('Error forcing UI update:', error);
         }
     }
 
@@ -742,45 +978,65 @@ class MellstroyGame {
     }
 
     updateStatsDisplay() {
-        document.getElementById('stat-levels-completed').textContent = this.stats.levelsCompleted;
-        document.getElementById('stat-total-moves').textContent = this.stats.totalMoves;
-        
-        const avgTime = this.stats.levelsCompleted > 0 ? 
-            Math.floor(this.stats.totalTime / this.stats.levelsCompleted) : 0;
-        const avgMinutes = Math.floor(avgTime / 60);
-        const avgSeconds = avgTime % 60;
-        document.getElementById('stat-avg-time').textContent = 
-            `${avgMinutes.toString().padStart(2, '0')}:${avgSeconds.toString().padStart(2, '0')}`;
+        try {
+            const levelsCompleted = document.getElementById('stat-levels-completed');
+            const totalMoves = document.getElementById('stat-total-moves');
+            const avgTime = document.getElementById('stat-avg-time');
+            const bestStreak = document.getElementById('stat-best-streak');
+            const totalStars = document.getElementById('stat-total-stars');
+            const achievements = document.getElementById('stat-achievements');
             
-        document.getElementById('stat-best-streak').textContent = this.stats.bestStreak;
-        document.getElementById('stat-total-stars').textContent = this.stats.totalStarsEarned;
-        document.getElementById('stat-achievements').textContent = 
-            `${this.achievementSystem.getUnlockedCount()}/${this.achievementSystem.getTotalCount()}`;
+            if (levelsCompleted) levelsCompleted.textContent = this.stats.levelsCompleted;
+            if (totalMoves) totalMoves.textContent = this.stats.totalMoves;
+            
+            const avgTimeValue = this.stats.levelsCompleted > 0 ? 
+                Math.floor(this.stats.totalTime / this.stats.levelsCompleted) : 0;
+            const avgMinutes = Math.floor(avgTimeValue / 60);
+            const avgSeconds = avgTimeValue % 60;
+            
+            if (avgTime) {
+                avgTime.textContent = 
+                    `${avgMinutes.toString().padStart(2, '0')}:${avgSeconds.toString().padStart(2, '0')}`;
+            }
+                
+            if (bestStreak) bestStreak.textContent = this.stats.bestStreak;
+            if (totalStars) totalStars.textContent = this.stats.totalStarsEarned;
+            if (achievements) {
+                achievements.textContent = 
+                    `${this.achievementSystem.getUnlockedCount()}/${this.achievementSystem.getTotalCount()}`;
+            }
+        } catch (error) {
+            console.error('Error updating stats display:', error);
+        }
     }
 
     renderLeaderboard(type) {
-        const container = document.getElementById('leaderboard-list');
-        if (!container) return;
+        try {
+            const container = document.getElementById('leaderboard-list');
+            if (!container) return;
 
-        // В реальной игре здесь должен быть запрос к серверу
-        // Для демонстрации создаем mock данные
-        const mockLeaderboard = this.generateMockLeaderboard(type);
-        
-        container.innerHTML = '';
-        mockLeaderboard.forEach((player, index) => {
-            const item = document.createElement('div');
-            item.className = 'leaderboard-item';
+            // В реальной игре здесь должен быть запрос к серверу
+            // Для демонстрации создаем mock данные
+            const mockLeaderboard = this.generateMockLeaderboard(type);
             
-            item.innerHTML = `
-                <div class="leaderboard-rank">${index + 1}</div>
-                <div class="leaderboard-player">
-                    <div class="leaderboard-name">${player.name}</div>
-                    <div class="leaderboard-score">${this.formatLeaderboardScore(player.score, type)}</div>
-                </div>
-            `;
-            
-            container.appendChild(item);
-        });
+            container.innerHTML = '';
+            mockLeaderboard.forEach((player, index) => {
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                
+                item.innerHTML = `
+                    <div class="leaderboard-rank">${index + 1}</div>
+                    <div class="leaderboard-player">
+                        <div class="leaderboard-name">${player.name}</div>
+                        <div class="leaderboard-score">${this.formatLeaderboardScore(player.score, type)}</div>
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            });
+        } catch (error) {
+            console.error('Error rendering leaderboard:', error);
+        }
     }
 
     generateMockLeaderboard(type) {
@@ -823,9 +1079,35 @@ class MellstroyGame {
 
 // Инициализация игры когда DOM загружен
 let game;
-document.addEventListener('DOMContentLoaded', () => {
-    game = new MellstroyGame();
-
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        console.log('DOM loaded, initializing game...');
+        game = new MellstroyGame();
+        console.log('Game initialized successfully');
+    } catch (error) {
+        console.error('Error initializing game:', error);
+        
+        // Показать сообщение об ошибке пользователю
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 10000;
+            font-family: Arial;
+            max-width: 300px;
+        `;
+        errorDiv.innerHTML = `
+            <h3>Ошибка загрузки игры</h3>
+            <p>Попробуйте обновить страницу</p>
+            <button onclick="location.reload()" style="padding: 10px; margin-top: 10px;">Обновить</button>
+        `;
+        document.body.appendChild(errorDiv);
+    }
 });
-
-
