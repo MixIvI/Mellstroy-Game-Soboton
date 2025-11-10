@@ -701,11 +701,31 @@ class MellstroyGame {
         }
     }
 
+    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Правильная проверка завершения уровня
     checkLevelComplete(grid) {
         try {
-            const levelComplete = !grid.some(row => 
-                row.includes('$') || row.includes('.')
-            );
+            // Уровень завершен, когда все коробки находятся на целях
+            // Это означает, что не должно остаться коробок '$' и целей '.'
+            let hasBox = false;
+            let hasTarget = false;
+            
+            for (let y = 0; y < grid.length; y++) {
+                for (let x = 0; x < grid[y].length; x++) {
+                    if (grid[y][x] === '$') {
+                        hasBox = true;
+                    }
+                    if (grid[y][x] === '.') {
+                        hasTarget = true;
+                    }
+                    // Если нашли и коробку и цель, можно выйти раньше
+                    if (hasBox && hasTarget) break;
+                }
+                if (hasBox && hasTarget) break;
+            }
+            
+            const levelComplete = !hasBox && !hasTarget;
+            
+            console.log('Level complete check:', { hasBox, hasTarget, levelComplete });
 
             if (levelComplete) {
                 this.stopTimer();
