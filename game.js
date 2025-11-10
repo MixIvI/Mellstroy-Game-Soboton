@@ -671,7 +671,12 @@ class MellstroyGame {
             
             this.moves++;
             this.soundSystem.play('move');
-            this.checkLevelComplete();
+            
+            // Проверяем завершение уровня после хода
+            setTimeout(() => {
+                this.checkLevelComplete();
+            }, 100);
+            
             this.renderLevel();
         } catch (error) {
             console.error('Error executing move:', error);
@@ -693,7 +698,12 @@ class MellstroyGame {
             
             this.moves++;
             this.soundSystem.play('push');
-            this.checkLevelComplete();
+            
+            // Проверяем завершение уровня после толкания коробки
+            setTimeout(() => {
+                this.checkLevelComplete();
+            }, 100);
+            
             this.renderLevel();
         } catch (error) {
             console.error('Error executing push:', error);
@@ -714,37 +724,50 @@ class MellstroyGame {
     // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Правильная проверка завершения уровня
     checkLevelComplete() {
         try {
+            if (this.levelCompleted) return;
+            
             const level = levels[this.currentLevel - 1];
             const grid = level.grid;
             
-            // Уровень завершен, когда все цели заняты коробками (нет '$' и '.')
-            let hasBox = false;
-            let hasTarget = false;
+            console.log('Checking level completion for level:', this.currentLevel);
+            console.log('Current grid:', grid);
+            
+            // Уровень завершен, когда все цели заняты коробками
+            // Это значит, что не должно быть ни одной цели '.' и ни одной коробки '$'
+            let hasUnplacedBox = false;
+            let hasEmptyTarget = false;
             
             for (let y = 0; y < grid.length; y++) {
                 for (let x = 0; x < grid[y].length; x++) {
-                    if (grid[y][x] === '$') {
-                        hasBox = true;
+                    const cell = grid[y][x];
+                    if (cell === '$') {
+                        hasUnplacedBox = true;
+                        console.log('Found unplaced box at:', x, y);
                     }
-                    if (grid[y][x] === '.') {
-                        hasTarget = true;
+                    if (cell === '.') {
+                        hasEmptyTarget = true;
+                        console.log('Found empty target at:', x, y);
                     }
-                    // Если нашли и коробку и цель, можно выйти раньше
-                    if (hasBox && hasTarget) break;
                 }
-                if (hasBox && hasTarget) break;
             }
             
-            const levelComplete = !hasBox && !hasTarget;
+            const levelComplete = !hasUnplacedBox && !hasEmptyTarget;
             
-            console.log('Level complete check:', { hasBox, hasTarget, levelComplete });
+            console.log('Level complete check:', { 
+                hasUnplacedBox, 
+                hasEmptyTarget, 
+                levelComplete 
+            });
 
-            if (levelComplete && !this.levelCompleted) {
+            if (levelComplete) {
+                console.log('LEVEL COMPLETED!');
                 this.levelCompleted = true;
                 this.stopTimer();
+                
+                // Даем время на анимацию перед показом модального окна
                 setTimeout(() => {
                     this.completeLevel();
-                }, 500);
+                }, 800);
             }
         } catch (error) {
             console.error('Error checking level completion:', error);
@@ -753,6 +776,8 @@ class MellstroyGame {
 
     completeLevel() {
         try {
+            console.log('Completing level...');
+            
             const starsEarned = this.calculateLevelReward();
             this.stars += starsEarned;
             this.stats.totalStarsEarned += starsEarned;
@@ -769,6 +794,8 @@ class MellstroyGame {
             this.soundSystem.play('complete');
             this.showLevelCompleteModal(starsEarned);
             this.saveGameState();
+            
+            console.log('Level completed successfully');
         } catch (error) {
             console.error('Error completing level:', error);
         }
@@ -784,15 +811,41 @@ class MellstroyGame {
 
     showLevelCompleteModal(starsEarned) {
         try {
+            console.log('Showing level complete modal with stars:', starsEarned);
+            
             const finalMoves = document.getElementById('final-moves');
             const finalTime = document.getElementById('final-time');
             const starsEarnedElement = document.getElementById('stars-earned');
             const modal = document.getElementById('level-complete');
             
-            if (finalMoves) finalMoves.textContent = this.moves;
-            if (finalTime) finalTime.textContent = document.getElementById('timer')?.textContent || '00:00';
-            if (starsEarnedElement) starsEarnedElement.textContent = starsEarned;
-            if (modal) modal.classList.remove('hidden');
+            if (finalMoves) {
+                finalMoves.textContent = this.moves;
+                console.log('Final moves:', this.moves);
+            }
+            
+            if (finalTime) {
+                const timerText = document.getElementById('timer')?.textContent || '00:00';
+                finalTime.textContent = timerText;
+                console.log('Final time:', timerText);
+            }
+            
+            if (starsEarnedElement) {
+                starsEarnedElement.textContent = starsEarned;
+                console.log('Stars earned:', starsEarned);
+            }
+            
+            if (modal) {
+                console.log('Removing hidden class from modal');
+                modal.classList.remove('hidden');
+                
+                // Принудительно обновляем стили
+                modal.style.display = 'flex';
+                setTimeout(() => {
+                    modal.style.opacity = '1';
+                }, 10);
+            } else {
+                console.error('Level complete modal not found!');
+            }
         } catch (error) {
             console.error('Error showing level complete modal:', error);
         }
@@ -801,7 +854,10 @@ class MellstroyGame {
     showNoEnergyModal() {
         try {
             const modal = document.getElementById('no-energy');
-            if (modal) modal.classList.remove('hidden');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.style.display = 'flex';
+            }
         } catch (error) {
             console.error('Error showing no energy modal:', error);
         }
@@ -815,7 +871,10 @@ class MellstroyGame {
             
             if (title) title.textContent = achievement.name;
             if (desc) desc.textContent = achievement.description;
-            if (modal) modal.classList.remove('hidden');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.style.display = 'flex';
+            }
             this.soundSystem.play('achievement');
         } catch (error) {
             console.error('Error showing achievement modal:', error);
@@ -825,7 +884,10 @@ class MellstroyGame {
     hideAchievementModal() {
         try {
             const modal = document.getElementById('achievement-unlocked');
-            if (modal) modal.classList.add('hidden');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+            }
         } catch (error) {
             console.error('Error hiding achievement modal:', error);
         }
@@ -835,6 +897,7 @@ class MellstroyGame {
         try {
             document.querySelectorAll('.modal').forEach(modal => {
                 modal.classList.add('hidden');
+                modal.style.display = 'none';
             });
         } catch (error) {
             console.error('Error hiding modals:', error);
@@ -843,6 +906,7 @@ class MellstroyGame {
 
     nextLevel() {
         try {
+            console.log('Moving to next level');
             this.hideModals();
             this.levelCompleted = false;
             this.currentLevel = Math.min(this.currentLevel + 1, levels.length);
@@ -871,7 +935,9 @@ class MellstroyGame {
             
             // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Восстанавливаем исходное состояние уровня
             const originalLevel = this.originalLevels[this.currentLevel - 1];
-            levels[this.currentLevel - 1] = JSON.parse(JSON.stringify(originalLevel));
+            if (originalLevel) {
+                levels[this.currentLevel - 1] = JSON.parse(JSON.stringify(originalLevel));
+            }
             
             this.startTimer();
             this.renderLevel();
