@@ -139,17 +139,91 @@ class MellstroyGame {
     }
 
     setupEventListeners() {
+    try {
         // Кнопки управления
-        document.getElementById('restart-btn').addEventListener('click', () => this.restartLevel());
-        document.getElementById('undo-btn').addEventListener('click', () => this.undoMove());
-        document.getElementById('next-level-btn').addEventListener('click', () => this.nextLevel());
-        document.getElementById('buy-energy-btn').addEventListener('click', () => this.showShop());
-        document.getElementById('close-modal-btn').addEventListener('click', () => this.hideModals());
+        const restartBtn = document.getElementById('restart-btn');
+        const undoBtn = document.getElementById('undo-btn');
+        const nextLevelBtn = document.getElementById('next-level-btn');
+        const buyEnergyBtn = document.getElementById('buy-energy-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+
+        if (restartBtn) {
+            restartBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.restartLevel();
+            });
+            restartBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.restartLevel();
+            });
+        }
+
+        if (undoBtn) {
+            undoBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.undoMove();
+            });
+            undoBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.undoMove();
+            });
+        }
+
+        if (nextLevelBtn) {
+            nextLevelBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.nextLevel();
+            });
+            nextLevelBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.nextLevel();
+            });
+        }
+
+        if (buyEnergyBtn) {
+            buyEnergyBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.showShop();
+            });
+            buyEnergyBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.showShop();
+            });
+        }
+
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hideModals();
+            });
+            closeModalBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hideModals();
+            });
+        }
 
         // Навигация по вкладкам
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const tab = e.target.dataset.tab;
+                e.preventDefault();
+                e.stopPropagation();
+                const tab = e.currentTarget.getAttribute('data-tab');
+                this.switchTab(tab);
+            });
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const tab = e.currentTarget.getAttribute('data-tab');
                 this.switchTab(tab);
             });
         });
@@ -157,29 +231,56 @@ class MellstroyGame {
         // Магазин
         document.querySelectorAll('.shop-item').forEach(item => {
             item.addEventListener('click', (e) => {
-                const energy = parseInt(e.currentTarget.dataset.energy);
-                const price = parseInt(e.currentTarget.dataset.price);
+                e.preventDefault();
+                e.stopPropagation();
+                const energy = parseInt(e.currentTarget.getAttribute('data-energy'));
+                const price = parseInt(e.currentTarget.getAttribute('data-price'));
+                this.purchaseEnergy(energy, price);
+            });
+            item.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const energy = parseInt(e.currentTarget.getAttribute('data-energy'));
+                const price = parseInt(e.currentTarget.getAttribute('data-price'));
                 this.purchaseEnergy(energy, price);
             });
         });
 
         // Настройки
-        document.getElementById('sound-toggle').addEventListener('change', (e) => {
-            this.soundSystem.setEnabled(e.target.checked);
-        });
+        const soundToggle = document.getElementById('sound-toggle');
+        const animationsToggle = document.getElementById('animations-toggle');
+        const themeSelector = document.getElementById('theme-selector');
 
-        document.getElementById('animations-toggle').addEventListener('change', (e) => {
-            this.animationsEnabled = e.target.checked;
-        });
+        if (soundToggle) {
+            soundToggle.addEventListener('change', (e) => {
+                this.soundSystem.setEnabled(e.target.checked);
+            });
+        }
 
-        document.getElementById('theme-selector').addEventListener('change', (e) => {
-            this.themeSystem.applyTheme(e.target.value);
-        });
+        if (animationsToggle) {
+            animationsToggle.addEventListener('change', (e) => {
+                this.animationsEnabled = e.target.checked;
+            });
+        }
+
+        if (themeSelector) {
+            themeSelector.addEventListener('change', (e) => {
+                this.themeSystem.applyTheme(e.target.value);
+            });
+        }
 
         // Таблица лидеров
         document.querySelectorAll('.leaderboard-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
-                const type = e.target.dataset.type;
+                e.preventDefault();
+                e.stopPropagation();
+                const type = e.currentTarget.getAttribute('data-type');
+                this.switchLeaderboard(type);
+            });
+            tab.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const type = e.currentTarget.getAttribute('data-type');
                 this.switchLeaderboard(type);
             });
         });
@@ -189,7 +290,16 @@ class MellstroyGame {
 
         // Обработка свайпов для мобильных устройств
         this.setupTouchControls();
+        
+        // Принудительное обновление интерфейса
+        setTimeout(() => {
+            this.updateAllDisplays();
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Error setting up event listeners:', error);
     }
+}
 
     setupTouchControls() {
         let startX, startY;
@@ -691,3 +801,4 @@ document.addEventListener('DOMContentLoaded', () => {
     game = new MellstroyGame();
 
 });
+
