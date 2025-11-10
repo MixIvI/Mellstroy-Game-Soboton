@@ -1,6 +1,0 @@
-# Временные ссылки на звуки (замените на скачанные)
-wget -O assets/sounds/move.mp3 "https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3"
-wget -O assets/sounds/push.mp3 "https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3"
-wget -O assets/sounds/complete.mp3 "https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3"
-wget -O assets/sounds/achievement.mp3 "https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3"
-wget -O assets/sounds/cash.mp3 "https://assets.mixkit.co/sfx/preview/mixkit-coins-handling-1936.mp3"
