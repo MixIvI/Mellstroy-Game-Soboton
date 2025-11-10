@@ -131,23 +131,6 @@ class MellstroyGame {
         this.updateUI();
     }
 
-    showShop() {
-    try {
-        // Переключаем на вкладку игры, где находится магазин
-        this.switchTab('game');
-        
-        // Прокручиваем к магазину
-        const shopSection = document.querySelector('.shop-section');
-        if (shopSection) {
-            shopSection.scrollIntoView({ behavior: 'smooth' });
-        }
-        
-        console.log('Shop opened');
-    } catch (error) {
-        console.error('Error showing shop:', error);
-    }
-}
-
     saveGameState() {
         try {
             const data = {
@@ -616,7 +599,8 @@ class MellstroyGame {
 
         try {
             const level = levels[this.currentLevel - 1];
-            const grid = level.grid.map(row => row.split(''));
+            // Создаем глубокую копию сетки для работы
+            const grid = level.grid.map(row => [...row]);
             
             // Находим игрока
             let playerX, playerY;
@@ -672,6 +656,9 @@ class MellstroyGame {
             grid[toY][toX] = toCell === '.' ? '+' : '@';
             grid[fromY][fromX] = fromCell === '+' ? '.' : ' ';
             
+            // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Обновляем исходный уровень
+            this.updateLevelGrid(grid);
+            
             this.moves++;
             this.soundSystem.play('move');
             this.checkLevelComplete(grid);
@@ -691,12 +678,26 @@ class MellstroyGame {
             grid[boxY][boxX] = boxCell === '*' ? '+' : '@';
             grid[playerY][playerX] = playerCell === '+' ? '.' : ' ';
             
+            // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Обновляем исходный уровень
+            this.updateLevelGrid(grid);
+            
             this.moves++;
             this.soundSystem.play('push');
             this.checkLevelComplete(grid);
             this.renderLevel();
         } catch (error) {
             console.error('Error executing push:', error);
+        }
+    }
+
+    // НОВЫЙ МЕТОД: Обновление исходной сетки уровня
+    updateLevelGrid(grid) {
+        try {
+            const level = levels[this.currentLevel - 1];
+            // Преобразуем массив символов обратно в строки
+            level.grid = grid.map(row => row.join(''));
+        } catch (error) {
+            console.error('Error updating level grid:', error);
         }
     }
 
@@ -845,6 +846,7 @@ class MellstroyGame {
         try {
             if (this.history.length > 0) {
                 const previousState = this.history.pop();
+                // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Правильно восстанавливаем уровень
                 levels[this.currentLevel - 1].grid = previousState;
                 this.moves--;
                 this.stats.undoUsed++;
@@ -857,6 +859,7 @@ class MellstroyGame {
 
     saveState(grid) {
         try {
+            // Сохраняем состояние как массив строк
             const state = grid.map(row => row.join(''));
             this.history.push(state);
             
@@ -869,9 +872,20 @@ class MellstroyGame {
     }
 
     showShop() {
-        this.hideModals();
-        // Магазин уже отображается в основном интерфейсе
-        console.log('Shop opened');
+        try {
+            // Переключаем на вкладку игры, где находится магазин
+            this.switchTab('game');
+            
+            // Прокручиваем к магазину
+            const shopSection = document.querySelector('.shop-section');
+            if (shopSection) {
+                shopSection.scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            console.log('Shop opened');
+        } catch (error) {
+            console.error('Error showing shop:', error);
+        }
     }
 
     async purchaseEnergy(energyAmount, price) {
