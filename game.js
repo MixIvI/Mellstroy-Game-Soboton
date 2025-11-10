@@ -35,12 +35,28 @@ class MellstroyGame {
             '*': 'box-on-target'
         };
 
+        // Безопасная инициализация Telegram
+        try {
+            this.Telegram = window.Telegram?.WebApp;
+            if (this.Telegram) {
+                this.Telegram.ready();
+                this.Telegram.expand();
+                console.log('Telegram Web App initialized successfully');
+            }
+        } catch (error) {
+            console.log('Telegram initialization error:', error);
+            this.Telegram = null;
+        }
+
         // Инициализация систем
-        this.soundSystem = new SoundSystem();
-        this.themeSystem = new ThemeSystem();
-        this.achievementSystem = new AchievementSystem(this);
-        
-        this.initializeGame();
+        try {
+            this.soundSystem = new SoundSystem();
+            this.themeSystem = new ThemeSystem();
+            this.achievementSystem = new AchievementSystem(this);
+        } catch (error) {
+            console.log('System initialization error:', error);
+        }
+
         this.loadGameState();
         this.setupEventListeners();
         this.startTimer();
@@ -673,4 +689,5 @@ class MellstroyGame {
 let game;
 document.addEventListener('DOMContentLoaded', () => {
     game = new MellstroyGame();
+
 });
