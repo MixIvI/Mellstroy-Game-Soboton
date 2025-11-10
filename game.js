@@ -131,6 +131,23 @@ class MellstroyGame {
         this.updateUI();
     }
 
+    showShop() {
+    try {
+        // Переключаем на вкладку игры, где находится магазин
+        this.switchTab('game');
+        
+        // Прокручиваем к магазину
+        const shopSection = document.querySelector('.shop-section');
+        if (shopSection) {
+            shopSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        console.log('Shop opened');
+    } catch (error) {
+        console.error('Error showing shop:', error);
+    }
+}
+
     saveGameState() {
         try {
             const data = {
