@@ -754,3 +754,75 @@ body.theme-money {
     will-change: transform;
     backface-visibility: hidden;
 }
+/* Критические исправления для мобильного Telegram */
+.game-nav {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active-tab {
+    display: block !important;
+}
+
+/* Гарантируем работу кнопок на мобильных */
+.nav-btn, .btn, .shop-item {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    cursor: pointer;
+}
+
+/* Исправляем отображение игрового поля на мобильных */
+@media (max-width: 768px) {
+    .game-board {
+        gap: 1px;
+        padding: 3px;
+    }
+    
+    .cell {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        min-height: 30px !important;
+        font-size: 14px !important;
+    }
+    
+    .controls {
+        flex-direction: column;
+    }
+}
+
+/* Анимация для перемещения ящиков */
+.cell {
+    transition: all 0.2s ease;
+}
+
+.box.moving {
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+/* Гарантируем что модальные окна поверх всего */
+.modal {
+    z-index: 10000;
+}
+
+/* Исправляем отображение прогресса достижений */
+.achievement-progress-bar {
+    transition: width 0.5s ease-in-out;
+}
+
+/* Улучшаем отзывчивость на тач устройствах */
+@media (hover: none) and (pointer: coarse) {
+    .nav-btn:active, .btn:active, .shop-item:active {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+}
+
