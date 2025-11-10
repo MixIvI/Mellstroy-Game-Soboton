@@ -361,27 +361,53 @@ class MellstroyGame {
     }
 
     switchTab(tabName) {
+    try {
+        console.log('Switching to tab:', tabName);
+        
         // Скрываем все вкладки
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.classList.remove('active-tab');
+            tab.style.display = 'none';
         });
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.classList.remove('active');
         });
 
         // Показываем выбранную вкладку
-        document.getElementById(`${tabName}-tab`).classList.add('active-tab');
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-
-        // Обновляем контент вкладки если нужно
-        if (tabName === 'achievements') {
-            this.achievementSystem.renderAchievementsList();
-        } else if (tabName === 'leaderboard') {
-            this.renderLeaderboard('levels');
-        } else if (tabName === 'stats') {
-            this.updateStatsDisplay();
+        const targetTab = document.getElementById(`${tabName}-tab`);
+        const targetBtn = document.querySelector(`[data-tab="${tabName}"]`);
+        
+        if (targetTab) {
+            targetTab.classList.add('active-tab');
+            targetTab.style.display = 'block';
+            console.log('Tab shown:', tabName);
         }
+        
+        if (targetBtn) {
+            targetBtn.classList.add('active');
+        }
+
+        // Принудительное обновление DOM
+        setTimeout(() => {
+            // Обновляем контент вкладки если нужно
+            if (tabName === 'achievements') {
+                this.achievementSystem.renderAchievementsList();
+            } else if (tabName === 'leaderboard') {
+                this.renderLeaderboard('levels');
+            } else if (tabName === 'stats') {
+                this.updateStatsDisplay();
+            }
+            
+            // Принудительный reflow
+            if (targetTab) {
+                targetTab.offsetHeight;
+            }
+        }, 50);
+        
+    } catch (error) {
+        console.error('Error switching tab:', error);
     }
+}
 
     switchLeaderboard(type) {
         document.querySelectorAll('.leaderboard-tab').forEach(tab => {
@@ -801,4 +827,5 @@ document.addEventListener('DOMContentLoaded', () => {
     game = new MellstroyGame();
 
 });
+
 
