@@ -188,8 +188,20 @@ const achievements = {
 class AchievementSystem {
     constructor(game) {
         this.game = game;
-        this.achievements = JSON.parse(JSON.stringify(achievements)); // Deep copy
+        // Восстанавливаем достижения из оригинального объекта, а не делаем глубокую копию
+        this.achievements = this.initializeAchievements();
         this.loadAchievements();
+    }
+
+    initializeAchievements() {
+        const initialized = {};
+        Object.keys(achievements).forEach(key => {
+            initialized[key] = {
+                ...achievements[key],
+                unlocked: false
+            };
+        });
+        return initialized;
     }
 
     loadAchievements() {
@@ -199,6 +211,7 @@ class AchievementSystem {
                 const data = JSON.parse(saved);
                 Object.keys(data).forEach(achievementId => {
                     if (this.achievements[achievementId]) {
+                        // Обновляем только свойство unlocked, сохраняя оригинальные функции
                         this.achievements[achievementId].unlocked = data[achievementId];
                     }
                 });
@@ -282,7 +295,7 @@ class AchievementSystem {
     calculateAchievementProgress(achievement, stats) {
         if (achievement.unlocked) return 100;
         
-        // Базовая логика прогресса - можно улучшить
+        // Базовая логика прогресса
         switch(achievement.id) {
             case 'firstSteps':
                 return stats.levelsCompleted >= 1 ? 100 : 0;
