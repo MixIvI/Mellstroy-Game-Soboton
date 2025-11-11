@@ -1,9 +1,5 @@
 class MellstroyGame {
     constructor() {
-        // Определяем мобильное устройство
-        this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        console.log('Mobile device detected:', this.isMobile);
-        
         this.currentLevel = 1;
         this.moves = 0;
         this.energy = 3;
@@ -44,25 +40,7 @@ class MellstroyGame {
             '*': 'box-on-target'
         };
 
-        // Безопасная инициализация Telegram Web App
-        try {
-            this.Telegram = window.Telegram?.WebApp;
-            if (this.Telegram) {
-                console.log('Telegram Web App detected, initializing...');
-                this.Telegram.ready();
-                this.Telegram.expand();
-                this.Telegram.setHeaderColor('#0A0A0A');
-                this.Telegram.setBackgroundColor('#0A0A0A');
-                console.log('Telegram Web App initialized successfully');
-            } else {
-                console.log('Telegram Web App not available, running in browser mode');
-            }
-        } catch (error) {
-            console.error('Telegram Web App initialization error:', error);
-            this.Telegram = null;
-        }
-
-        // Безопасная инициализация систем
+        // Инициализация систем
         try {
             this.soundSystem = new SoundSystem();
         } catch (error) {
@@ -103,17 +81,6 @@ class MellstroyGame {
         this.updateAllDisplays();
     }
 
-    loadTelegramData() {
-        try {
-            const user = this.Telegram?.initDataUnsafe?.user;
-            if (user) {
-                console.log('Telegram user:', user);
-            }
-        } catch (error) {
-            console.error('Error loading Telegram data:', error);
-        }
-    }
-
     loadGameState() {
         try {
             const saved = localStorage.getItem('mellstroy_save');
@@ -150,41 +117,6 @@ class MellstroyGame {
         }
     }
 
-    restoreEnergyOverTime() {
-        if (!this.lastPlayed) return;
-        
-        try {
-            const lastPlayed = new Date(this.lastPlayed);
-            const now = new Date();
-            const hoursDiff = (now - lastPlayed) / (1000 * 60 * 60);
-            
-            if (hoursDiff >= 24) {
-                this.energy = 3;
-                this.saveGameState();
-            }
-        } catch (error) {
-            console.error('Error restoring energy:', error);
-        }
-    }
-
-    checkConsecutiveDays() {
-        try {
-            if (this.lastPlayed) {
-                const last = new Date(this.lastPlayed);
-                const now = new Date();
-                const diffDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
-                
-                if (diffDays === 1) {
-                    this.stats.consecutiveDays++;
-                } else if (diffDays > 1) {
-                    this.stats.consecutiveDays = 0;
-                }
-            }
-        } catch (error) {
-            console.error('Error checking consecutive days:', error);
-        }
-    }
-
     setupEventListeners() {
         try {
             // Кнопки управления
@@ -195,102 +127,36 @@ class MellstroyGame {
             const closeModalBtn = document.getElementById('close-modal-btn');
 
             if (restartBtn) {
-                restartBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.restartLevel();
-                });
-                restartBtn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.restartLevel();
-                }, { passive: false });
+                restartBtn.addEventListener('click', () => this.restartLevel());
             }
-
             if (undoBtn) {
-                undoBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.undoMove();
-                });
-                undoBtn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.undoMove();
-                }, { passive: false });
+                undoBtn.addEventListener('click', () => this.undoMove());
             }
-
             if (nextLevelBtn) {
-                nextLevelBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.nextLevel();
-                });
-                nextLevelBtn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.nextLevel();
-                }, { passive: false });
+                nextLevelBtn.addEventListener('click', () => this.nextLevel());
             }
-
             if (buyEnergyBtn) {
-                buyEnergyBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.showShop();
-                });
-                buyEnergyBtn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.showShop();
-                }, { passive: false });
+                buyEnergyBtn.addEventListener('click', () => this.showShop());
             }
-
             if (closeModalBtn) {
-                closeModalBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.hideModals();
-                });
-                closeModalBtn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.hideModals();
-                }, { passive: false });
+                closeModalBtn.addEventListener('click', () => this.hideModals());
             }
 
             // Навигация по вкладкам
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
                     const tab = e.currentTarget.getAttribute('data-tab');
                     this.switchTab(tab);
                 });
-                btn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const tab = e.currentTarget.getAttribute('data-tab');
-                    this.switchTab(tab);
-                }, { passive: false });
             });
 
             // Магазин
             document.querySelectorAll('.shop-item').forEach(item => {
                 item.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
                     const energy = parseInt(e.currentTarget.getAttribute('data-energy'));
                     const price = parseInt(e.currentTarget.getAttribute('data-price'));
                     this.purchaseEnergy(energy, price);
                 });
-                item.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const energy = parseInt(e.currentTarget.getAttribute('data-energy'));
-                    const price = parseInt(e.currentTarget.getAttribute('data-price'));
-                    this.purchaseEnergy(energy, price);
-                }, { passive: false });
             });
 
             // Настройки
@@ -303,45 +169,22 @@ class MellstroyGame {
                     this.soundSystem.setEnabled(e.target.checked);
                 });
             }
-
             if (animationsToggle) {
                 animationsToggle.addEventListener('change', (e) => {
                     this.animationsEnabled = e.target.checked;
                 });
             }
-
             if (themeSelector) {
                 themeSelector.addEventListener('change', (e) => {
                     this.themeSystem.applyTheme(e.target.value);
                 });
             }
 
-            // Таблица лидеров
-            document.querySelectorAll('.leaderboard-tab').forEach(tab => {
-                tab.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const type = e.currentTarget.getAttribute('data-type');
-                    this.switchLeaderboard(type);
-                });
-                tab.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const type = e.currentTarget.getAttribute('data-type');
-                    this.switchLeaderboard(type);
-                }, { passive: false });
-            });
-
             // Управление с клавиатуры
             document.addEventListener('keydown', (e) => this.handleKeyPress(e));
 
             // Обработка свайпов для мобильных устройств
             this.setupTouchControls();
-            
-            // Принудительное обновление интерфейса
-            setTimeout(() => {
-                this.updateAllDisplays();
-            }, 1000);
             
         } catch (error) {
             console.error('Error setting up event listeners:', error);
@@ -362,10 +205,6 @@ class MellstroyGame {
                 e.preventDefault();
             }, { passive: false });
 
-            gameBoard.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-            }, { passive: false });
-
             gameBoard.addEventListener('touchend', (e) => {
                 if (!startX || !startY) return;
 
@@ -375,16 +214,13 @@ class MellstroyGame {
                 const diffX = startX - endX;
                 const diffY = startY - endY;
 
-                // Проверяем минимальное расстояние свайпа
                 if (Math.abs(diffX) > minSwipeDistance || Math.abs(diffY) > minSwipeDistance) {
                     if (Math.abs(diffX) > Math.abs(diffY)) {
-                        // Горизонтальный свайп
-                        if (diffX > 0) this.movePlayer(-1, 0); // Влево
-                        else this.movePlayer(1, 0); // Вправо
+                        if (diffX > 0) this.movePlayer(-1, 0);
+                        else this.movePlayer(1, 0);
                     } else {
-                        // Вертикальный свайп
-                        if (diffY > 0) this.movePlayer(0, -1); // Вверх
-                        else this.movePlayer(0, 1); // Вниз
+                        if (diffY > 0) this.movePlayer(0, -1);
+                        else this.movePlayer(0, 1);
                     }
                 }
 
@@ -404,7 +240,6 @@ class MellstroyGame {
             return;
         }
 
-        // Не обрабатываем ходы если уровень завершен
         if (this.levelCompleted) return;
 
         let dx = 0, dy = 0;
@@ -423,12 +258,9 @@ class MellstroyGame {
 
     switchTab(tabName) {
         try {
-            console.log('Switching to tab:', tabName);
-            
             // Скрываем все вкладки
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active-tab');
-                tab.style.display = 'none';
             });
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.remove('active');
@@ -440,47 +272,20 @@ class MellstroyGame {
             
             if (targetTab) {
                 targetTab.classList.add('active-tab');
-                targetTab.style.display = 'block';
-                console.log('Tab shown:', tabName);
             }
-            
             if (targetBtn) {
                 targetBtn.classList.add('active');
             }
 
-            // Принудительное обновление DOM
-            setTimeout(() => {
-                // Обновляем контент вкладки если нужно
-                if (tabName === 'achievements') {
-                    this.achievementSystem.renderAchievementsList();
-                } else if (tabName === 'leaderboard') {
-                    this.renderLeaderboard('levels');
-                } else if (tabName === 'stats') {
-                    this.updateStatsDisplay();
-                }
-                
-                // Принудительный reflow
-                if (targetTab) {
-                    targetTab.offsetHeight;
-                }
-            }, 50);
+            // Обновляем контент вкладки если нужно
+            if (tabName === 'achievements') {
+                this.achievementSystem.renderAchievementsList();
+            } else if (tabName === 'stats') {
+                this.updateStatsDisplay();
+            }
             
         } catch (error) {
             console.error('Error switching tab:', error);
-        }
-    }
-
-    switchLeaderboard(type) {
-        try {
-            document.querySelectorAll('.leaderboard-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            const targetTab = document.querySelector(`[data-type="${type}"]`);
-            if (targetTab) targetTab.classList.add('active');
-            
-            this.renderLeaderboard(type);
-        } catch (error) {
-            console.error('Error switching leaderboard:', error);
         }
     }
 
@@ -527,15 +332,7 @@ class MellstroyGame {
         try {
             const level = levels[this.currentLevel - 1];
             const board = document.getElementById('game-board');
-            if (!board || !level) {
-                console.error('Board or level not found');
-                return;
-            }
-            
-            console.log('Rendering level:', this.currentLevel);
-            
-            // Сохраняем текущий размер
-            const currentWidth = board.offsetWidth;
+            if (!board || !level) return;
             
             board.innerHTML = '';
             
@@ -546,8 +343,8 @@ class MellstroyGame {
             board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
             board.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
             
-            // Рассчитываем размер клетки для мобильных устройств
-            const cellSize = Math.min(35, Math.floor(currentWidth / cols) - 2);
+            // Рассчитываем размер клетки
+            const cellSize = Math.min(35, Math.floor(board.offsetWidth / cols) - 2);
             
             for (let y = 0; y < rows; y++) {
                 for (let x = 0; x < cols; x++) {
@@ -555,43 +352,34 @@ class MellstroyGame {
                     const cellType = level.grid[y][x];
                     cell.className = `cell ${this.cellTypes[cellType] || 'empty'}`;
                     
-                    // Устанавливаем фиксированный размер для мобильных
+                    // Устанавливаем фиксированный размер
                     cell.style.width = `${cellSize}px`;
                     cell.style.height = `${cellSize}px`;
                     cell.style.minWidth = `${cellSize}px`;
                     cell.style.minHeight = `${cellSize}px`;
                     
-                    // Кастомные символы для стиля Mellstroy
+                    // Кастомные символы
                     if (cellType === '@' || cellType === '+') {
-                        cell.textContent = '🎭'; // Mellstroy
-                        cell.style.fontSize = `${Math.max(12, cellSize - 15)}px`;
+                        cell.textContent = '🎭';
                     }
                     else if (cellType === '$') {
-                        cell.textContent = '💰'; // Деньги
-                        cell.style.fontSize = `${Math.max(12, cellSize - 15)}px`;
+                        cell.textContent = '💰';
                     }
                     else if (cellType === '*') {
-                        cell.textContent = '💎'; // Деньги в сейфе
-                        cell.style.fontSize = `${Math.max(12, cellSize - 15)}px`;
+                        cell.textContent = '💎';
                     }
                     else if (cellType === '.') {
-                        cell.textContent = '🏦'; // Сейф
-                        cell.style.fontSize = `${Math.max(12, cellSize - 15)}px`;
+                        cell.textContent = '🏦';
                     }
                     else if (cellType === '#') {
-                        cell.textContent = '🎰'; // Стены казино
-                        cell.style.fontSize = `${Math.max(10, cellSize - 20)}px`;
+                        cell.textContent = '🎰';
                     }
                     
                     board.appendChild(cell);
                 }
             }
 
-            // Принудительное обновление DOM
-            setTimeout(() => {
-                board.offsetHeight; // trigger reflow
-                this.updateUI();
-            }, 10);
+            this.updateUI();
             
         } catch (error) {
             console.error('Error rendering level:', error);
@@ -599,17 +387,10 @@ class MellstroyGame {
     }
 
     movePlayer(dx, dy) {
-        if (this.energy <= 0) {
-            this.showNoEnergyModal();
-            return;
-        }
-
-        // Не обрабатываем ходы если уровень завершен
-        if (this.levelCompleted) return;
+        if (this.energy <= 0 || this.levelCompleted) return;
 
         try {
             const level = levels[this.currentLevel - 1];
-            // Создаем глубокую копию сетки для работы
             const grid = level.grid.map(row => [...row]);
             
             // Находим игрока
@@ -640,7 +421,7 @@ class MellstroyGame {
             if (targetCell === ' ' || targetCell === '.') {
                 this.executeMove(grid, playerX, playerY, newX, newY);
             }
-            // Толкание коробки с деньгами
+            // Толкание коробки
             else if (targetCell === '$' || targetCell === '*') {
                 const boxNewX = newX + dx;
                 const boxNewY = newY + dy;
@@ -666,13 +447,13 @@ class MellstroyGame {
             grid[toY][toX] = toCell === '.' ? '+' : '@';
             grid[fromY][fromX] = fromCell === '+' ? '.' : ' ';
             
-            // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Обновляем исходный уровень
+            // Обновляем уровень
             this.updateLevelGrid(grid);
             
             this.moves++;
             this.soundSystem.play('move');
             
-            // Проверяем завершение уровня сразу после хода
+            // Сразу проверяем завершение уровня
             this.checkLevelComplete();
             this.renderLevel();
         } catch (error) {
@@ -690,13 +471,13 @@ class MellstroyGame {
             grid[boxY][boxX] = boxCell === '*' ? '+' : '@';
             grid[playerY][playerX] = playerCell === '+' ? '.' : ' ';
             
-            // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Обновляем исходный уровень
+            // Обновляем уровень
             this.updateLevelGrid(grid);
             
             this.moves++;
             this.soundSystem.play('push');
             
-            // Проверяем завершение уровня сразу после толкания коробки
+            // Сразу проверяем завершение уровня
             this.checkLevelComplete();
             this.renderLevel();
         } catch (error) {
@@ -704,18 +485,16 @@ class MellstroyGame {
         }
     }
 
-    // НОВЫЙ МЕТОД: Обновление исходной сетки уровня
     updateLevelGrid(grid) {
         try {
             const level = levels[this.currentLevel - 1];
-            // Преобразуем массив символов обратно в строки
             level.grid = grid.map(row => row.join(''));
         } catch (error) {
             console.error('Error updating level grid:', error);
         }
     }
 
-    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Упрощенная и надежная проверка завершения уровня
+    // ПРОСТАЯ И НАДЕЖНАЯ ПРОВЕРКА ЗАВЕРШЕНИЯ УРОВНЯ
     checkLevelComplete() {
         try {
             if (this.levelCompleted) return;
@@ -723,47 +502,36 @@ class MellstroyGame {
             const level = levels[this.currentLevel - 1];
             const grid = level.grid;
             
-            // Простая и надежная проверка: уровень завершен, когда нет ни одной цели ('.')
-            // и нет ни одной коробки ('$'), которая не на цели
+            // Простая проверка: если нет ни одного '$' и ни одного '.', уровень завершен
             let hasBox = false;
             let hasTarget = false;
             
-            // Проходим по всей сетке
             for (let y = 0; y < grid.length; y++) {
                 const row = grid[y];
                 for (let x = 0; x < row.length; x++) {
                     const cell = row[x];
+                    if (cell === '$') hasBox = true;
+                    if (cell === '.') hasTarget = true;
                     
-                    if (cell === '$') {
-                        hasBox = true;
-                    }
-                    if (cell === '.') {
-                        hasTarget = true;
-                    }
-                    
-                    // Если нашли и коробку и цель, можно выйти раньше
+                    // Ранний выход если нашли и то и другое
                     if (hasBox && hasTarget) break;
                 }
                 if (hasBox && hasTarget) break;
             }
             
-            // Уровень завершен, если нет коробок и нет целей
             const levelComplete = !hasBox && !hasTarget;
             
             console.log('Level complete check:', { 
                 level: this.currentLevel,
                 hasBox, 
                 hasTarget, 
-                levelComplete,
-                grid: JSON.stringify(grid)
+                levelComplete 
             });
 
             if (levelComplete) {
-                console.log('🎉 LEVEL COMPLETED!');
+                console.log('🎉 УРОВЕНЬ ЗАВЕРШЕН!');
                 this.levelCompleted = true;
                 this.stopTimer();
-                
-                // Немедленно завершаем уровень
                 this.completeLevel();
             }
         } catch (error) {
@@ -773,7 +541,7 @@ class MellstroyGame {
 
     completeLevel() {
         try {
-            console.log('Completing level...');
+            console.log('Завершаем уровень...');
             
             const starsEarned = this.calculateLevelReward();
             this.stars += starsEarned;
@@ -792,7 +560,6 @@ class MellstroyGame {
             this.showLevelCompleteModal(starsEarned);
             this.saveGameState();
             
-            console.log('Level completed successfully');
         } catch (error) {
             console.error('Error completing level:', error);
         }
@@ -808,7 +575,7 @@ class MellstroyGame {
 
     showLevelCompleteModal(starsEarned) {
         try {
-            console.log('Showing level complete modal with stars:', starsEarned);
+            console.log('Показываем модальное окно завершения уровня');
             
             const finalMoves = document.getElementById('final-moves');
             const finalTime = document.getElementById('final-time');
@@ -821,9 +588,7 @@ class MellstroyGame {
             
             if (modal) {
                 modal.classList.remove('hidden');
-                console.log('Level complete modal shown');
-            } else {
-                console.error('Level complete modal not found!');
+                console.log('Модальное окно показано');
             }
         } catch (error) {
             console.error('Error showing level complete modal:', error);
@@ -875,7 +640,7 @@ class MellstroyGame {
 
     nextLevel() {
         try {
-            console.log('Moving to next level');
+            console.log('Переходим на следующий уровень');
             this.hideModals();
             this.levelCompleted = false;
             this.currentLevel = Math.min(this.currentLevel + 1, levels.length);
@@ -902,7 +667,7 @@ class MellstroyGame {
             this.moves = 0;
             this.history = [];
             
-            // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Восстанавливаем исходное состояние уровня
+            // Восстанавливаем исходное состояние уровня
             const originalLevel = this.originalLevels[this.currentLevel - 1];
             if (originalLevel) {
                 levels[this.currentLevel - 1] = JSON.parse(JSON.stringify(originalLevel));
@@ -921,7 +686,6 @@ class MellstroyGame {
         try {
             if (this.history.length > 0 && !this.levelCompleted) {
                 const previousState = this.history.pop();
-                // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Правильно восстанавливаем уровень
                 levels[this.currentLevel - 1].grid = previousState;
                 this.moves--;
                 this.stats.undoUsed++;
@@ -934,7 +698,6 @@ class MellstroyGame {
 
     saveState(grid) {
         try {
-            // Сохраняем состояние как массив строк
             const state = grid.map(row => row.join(''));
             this.history.push(state);
             
@@ -948,22 +711,17 @@ class MellstroyGame {
 
     showShop() {
         try {
-            // Переключаем на вкладку игры, где находится магазин
             this.switchTab('game');
-            
-            // Прокручиваем к магазину
             const shopSection = document.querySelector('.shop-section');
             if (shopSection) {
                 shopSection.scrollIntoView({ behavior: 'smooth' });
             }
-            
-            console.log('Shop opened');
         } catch (error) {
             console.error('Error showing shop:', error);
         }
     }
 
-    async purchaseEnergy(energyAmount, price) {
+    purchaseEnergy(energyAmount, price) {
         try {
             if (this.stars >= price) {
                 this.stars -= price;
@@ -972,39 +730,10 @@ class MellstroyGame {
                 this.saveGameState();
                 this.updateUI();
             } else {
-                await this.processTelegramPayment(price, energyAmount);
+                alert(`Недостаточно алмазов! Нужно: ${price}`);
             }
         } catch (error) {
             console.error('Error purchasing energy:', error);
-        }
-    }
-
-    async processTelegramPayment(price, energyAmount) {
-        if (!this.Telegram) {
-            alert(`В тестовом режиме: нужно ${price} алмазов для покупки`);
-            return;
-        }
-
-        try {
-            const invoice = {
-                title: `Пополнение энергии +${energyAmount}`,
-                description: `Получите ${energyAmount} дополнительных единиц энергии`,
-                payload: `${energyAmount}_energy_${Date.now()}`,
-                currency: 'XTR',
-                prices: [{ label: 'Stars', amount: price * 100 }]
-            };
-
-            this.Telegram.openInvoice(invoice, (status) => {
-                if (status === 'paid') {
-                    this.stars += price;
-                    this.energy += energyAmount;
-                    this.saveGameState();
-                    this.updateUI();
-                    this.soundSystem.play('cash');
-                }
-            });
-        } catch (error) {
-            console.error('Payment error:', error);
         }
     }
 
@@ -1033,54 +762,15 @@ class MellstroyGame {
             if (starsCount) starsCount.textContent = this.stars;
             
             if (this.energy <= 0) {
-                if (restartBtn) {
-                    restartBtn.disabled = true;
-                    restartBtn.style.opacity = '0.5';
-                }
-                if (undoBtn) {
-                    undoBtn.disabled = true;
-                    undoBtn.style.opacity = '0.5';
-                }
+                if (restartBtn) restartBtn.disabled = true;
+                if (undoBtn) undoBtn.disabled = true;
             } else {
-                if (restartBtn) {
-                    restartBtn.disabled = false;
-                    restartBtn.style.opacity = '1';
-                }
-                if (undoBtn) {
-                    undoBtn.disabled = this.history.length === 0 || this.levelCompleted;
-                    undoBtn.style.opacity = (this.history.length === 0 || this.levelCompleted) ? '0.5' : '1';
-                }
+                if (restartBtn) restartBtn.disabled = false;
+                if (undoBtn) undoBtn.disabled = this.history.length === 0 || this.levelCompleted;
             }
         } catch (error) {
             console.error('Error updating UI:', error);
         }
-    }
-
-    forceUIUpdate() {
-        try {
-            // Принудительно обновляем все счетчики
-            this.updateUI();
-            this.updateStatsDisplay();
-            
-            // Принудительный reflow для игрового поля
-            const gameBoard = document.getElementById('game-board');
-            if (gameBoard) {
-                gameBoard.style.display = 'none';
-                gameBoard.offsetHeight; // trigger reflow
-                gameBoard.style.display = 'grid';
-            }
-            
-            console.log('UI forced update completed');
-        } catch (error) {
-            console.error('Error forcing UI update:', error);
-        }
-    }
-
-    updateAllDisplays() {
-        this.updateUI();
-        this.updateStatsDisplay();
-        this.achievementSystem.renderAchievementsList();
-        this.renderLeaderboard('levels');
     }
 
     updateStatsDisplay() {
@@ -1116,82 +806,22 @@ class MellstroyGame {
         }
     }
 
-    renderLeaderboard(type) {
-        try {
-            const container = document.getElementById('leaderboard-list');
-            if (!container) return;
-
-            // В реальной игре здесь должен быть запрос к серверу
-            // Для демонстрации создаем mock данные
-            const mockLeaderboard = this.generateMockLeaderboard(type);
-            
-            container.innerHTML = '';
-            mockLeaderboard.forEach((player, index) => {
-                const item = document.createElement('div');
-                item.className = 'leaderboard-item';
-                
-                item.innerHTML = `
-                    <div class="leaderboard-rank">${index + 1}</div>
-                    <div class="leaderboard-player">
-                        <div class="leaderboard-name">${player.name}</div>
-                        <div class="leaderboard-score">${this.formatLeaderboardScore(player.score, type)}</div>
-                    </div>
-                `;
-                
-                container.appendChild(item);
-            });
-        } catch (error) {
-            console.error('Error rendering leaderboard:', error);
-        }
-    }
-
-    generateMockLeaderboard(type) {
-        const names = ['Mellstroy', 'Казино_Босс', 'Деньги_Любитель', 'Сейф_Взломщик', 'Алмазный_Король', 
-                      'Удача_Наша', 'Джекпот_Охотник', 'Золотой_Игрок', 'Вепок', 'Стример'];
-        
-        return names.map((name, index) => {
-            let score;
-            switch(type) {
-                case 'levels':
-                    score = 100 - index * 5;
-                    break;
-                case 'moves':
-                    score = 5000 - index * 200;
-                    break;
-                case 'stars':
-                    score = 1000 - index * 50;
-                    break;
-                default:
-                    score = 100 - index * 5;
-            }
-            
-            return { name, score };
-        }).sort((a, b) => b.score - a.score);
-    }
-
-    formatLeaderboardScore(score, type) {
-        switch(type) {
-            case 'levels':
-                return `Уровень: ${score}`;
-            case 'moves':
-                return `Ходы: ${score}`;
-            case 'stars':
-                return `Алмазы: ${score}`;
-            default:
-                return score;
-        }
+    updateAllDisplays() {
+        this.updateUI();
+        this.updateStatsDisplay();
+        this.achievementSystem.renderAchievementsList();
     }
 }
 
-// Инициализация игры когда DOM загружен
+// Инициализация игры
 let game;
 document.addEventListener('DOMContentLoaded', function() {
     try {
-        console.log('DOM loaded, initializing game...');
+        console.log('Загружаем игру...');
         game = new MellstroyGame();
-        console.log('Game initialized successfully');
+        console.log('Игра успешно загружена!');
     } catch (error) {
-        console.error('Error initializing game:', error);
+        console.error('Ошибка загрузки игры:', error);
         
         // Показать сообщение об ошибке пользователю
         const errorDiv = document.createElement('div');
